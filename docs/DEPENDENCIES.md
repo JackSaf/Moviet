@@ -25,6 +25,7 @@ Stable releases checked on 2026-10-26 against Google Maven, Maven Central, the G
 | Kotlin Serialization runtime | 1.12.0 |
 | Kotlin Coroutines | 1.11.0 |
 | Coil / OkHttp fetcher | 3.6.3 |
+| JUnit 4 (local JVM tests only) | 4.13.2 |
 
 Compose UI and Material 3 versions are managed by the stable Compose BOM. Koin library versions are managed by its BOM. The build uses the Android Studio JBR locally; the bytecode target is intentionally independent of the installed JBR's version. Gradle pins its own distribution checksum. SDK Build Tools are selected by AGP rather than unnecessarily pinned in each module.
 
@@ -48,6 +49,7 @@ The Koin compiler plugin 1.2.1 release verifies Kotlin through 2.4.20. Kotlin 2.
 - [Serialization metadata](https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/maven-metadata.xml)
 - [Coroutines metadata](https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-android/maven-metadata.xml)
 - [Coil metadata](https://repo.maven.apache.org/maven2/io/coil-kt/coil3/coil-compose/maven-metadata.xml)
+- [JUnit 4 latest release](https://github.com/junit-team/junit4/releases/latest): 4.13.2 checked on 2026-10-27. Uses the standard Android local-unit-test runner; no additional JUnit Platform plugin is required.
 
 ## Verification record
 
@@ -58,3 +60,5 @@ The final build/lint command `:app:assembleDebug :app:assembleRelease :app:lintD
 Known toolchain notices: Koin compiler 1.2.1 warns that Kotlin 2.4.21 is newer than its verified 2.4.20 adapter, although both variants compile successfully. Upstream plugins still emit a Gradle deprecation summary. None of these notices is suppressed by the project. The Cyrillic-path override used in the original checkout was removed when the project moved to `C:\Users\jacks\AndroidStudioProjects\Moviet` on 2026-10-27.
 
 On 2026-10-27, after moving the checkout to AndroidStudioProjects and removing the path-check override, `:app:assembleDebug :app:lintDebug --no-daemon` completed successfully from the new directory. The debug lint report states `No issues found.` Git remains uncommitted.
+
+On 2026-10-27, after implementing the repositories, OMDb contract/mappers and separate API-key interceptor, `:app:testDebugUnitTest :app:assembleDebug :app:lintDebug :app:assembleRelease --no-daemon` completed successfully. All 17 JVM tests passed, debug lint reports `No issues found.`, and the release passed R8/resource shrinking. The runtime Koin test resolves all three repository interfaces and the Retrofit API, and checks that OkHttp uses the registered interceptor. Room schema version 1 is unchanged. The first combined run encountered an internal Kotlin/FIR lint crash while analyzing a test fixture; the final rerun after fixture cleanup passed with all lint checks enabled. Tests use local HTTP fixtures and a fake DAO; no live OMDb requests or device persistence checks were performed. The previously documented Koin compatibility warning and upstream Gradle deprecation notices remain. Git remains uncommitted.

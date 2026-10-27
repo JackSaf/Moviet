@@ -23,6 +23,8 @@ Create a reviewable Android Studio project foundation following applicable Notis
 
 Additional authorized work: implement the app theme from the supplied cinema/carousel design. This covers shared visual tokens and platform appearance; the carousel and search UI remain future feature work.
 
+Additional authorized work: implement the repository/data layer, database and domain movie models, mappers, database/DAO, OMDb API interface, and Koin dependency injection. Keep the API-key interceptor in a separate class under `core/network/utils`.
+
 ## Implemented foundation
 
 - Local checkout moved to `C:\Users\jacks\AndroidStudioProjects\Moviet` on 2026-10-27; the Cyrillic-path Gradle workaround was removed.
@@ -32,19 +34,29 @@ Additional authorized work: implement the app theme from the supplied cinema/car
 - Design-based dark Compose theme: amber accents, charcoal surfaces, off-white text, sans-serif typography, rounded shapes and spacing tokens. The theme stays dark in both device appearance modes; platform launch colors and system bar icons match. Debug-only component previews cover light/dark system settings, narrow width and large text. See `docs/DESIGN_SYSTEM.md`.
 - Resource-based text; a minimal home screen and favorites placeholder with a working Navigation 3 back stack.
 - Koin application startup, feature modules, and an injected search ViewModel. Navigation entries own their ViewModels.
-- Room database version 1, favorites entity/DAO, schema export, and lazy DI registration. This plumbing is not yet connected to the favorites screen.
-- Retrofit, Kotlin Serialization, OMDb-scoped OkHttp configuration, and BuildConfig fields for the base URL and externally supplied API key without committing a credential. No API service or requests yet.
+- Shared domain `Movie`/`MovieType` models, OMDb DTOs, and API/database mappers. Missing posters (`N/A`) become null; unrecognized movie types become `UNKNOWN`. Missing movie identity/title is an invalid API response.
+- Room database version 1, favorites entity/DAO, schema export, and lazy DI registration. `FavoritesRepository` maps entities to domain movies, observes favorites and per-movie favorite status, and adds/removes favorites with suspend writes. The existing schema is preserved; the favorites screen is not connected yet.
+- Retrofit OMDb API interface for keyword search and details by IMDb ID. `SearchRepository` fetches one page and exposes the total result count; `DetailsRepository` fetches a domain movie. Typed results distinguish HTTP errors, OMDb `Response=False`, connection failures, invalid requests, and malformed content. Cancellation propagates.
+- Kotlin Serialization, OMDb-scoped OkHttp configuration, a distinct `OmdbApiKeyInterceptor` in `core/network/utils`, and BuildConfig fields for the base URL and externally supplied API key without committing a credential. Koin registers the API/interceptor and explicitly binds each feature repository interface to its implementation.
 - Paging and Coil dependencies are connected; their feature integrations are still pending.
 - Shared `UiText`, lifecycle-aware event observation, spacing tokens, and state sharing timeout policy.
 - Feature package skeletons, project-local skills, project conventions, and Git hygiene.
 
 ## Not implemented yet
 
-- Search input, query debounce/cancellation, OMDb DTOs and service, repository, paginated results, errors/retry and loading states.
+- Search input, query debounce/cancellation, PagingSource and paginated UI results, errors/retry and loading states. Repository requests exist; no screen starts them yet.
 - Details screen and poster rendering.
-- Favorites domain/repository mapping, list observation in UI, and add/remove actions.
+- Favorites list observation in UI and add/remove UI actions.
 - Advertising interfaces, AdMob dependency/configuration, native ad binding/disposal, foreground counting, and interstitial lifecycle.
-- Automated behavior tests, CI, release signing, distribution, and publication.
+- Device persistence tests, CI, release signing, distribution, and publication.
+
+## Data layer boundaries
+
+Each feature owns its repository contract in `domain`, implementation in `data`, and Koin binding in `di`. Shared movie types and network outcomes live in `core/domain`; shared API DTOs, API interface and response handling live in `core/network/data`. Room entities remain in `core/database`. Repositories do not start background work during construction, and screens continue to use their existing scaffold state.
+
+The [official OMDb contract](https://www.omdbapi.com/) defines `s` for search, `i` for IMDb lookup, and one-based `page` values from 1 to 100. Search validates those bounds and returns one page; PagingSource/end-of-pagination policy is future work. No API key is needed for the local fixture tests.
+
+JVM tests cover Retrofit query encoding/JSON mapping, unavailable values, invalid payloads, HTTP versus OMDb failures, cancellation, repository favorite observation/writes with a fake DAO, interceptor authentication, and runtime Koin repository/API resolution. They do not verify real Room persistence or live OMDb access.
 
 ## Decisions to resolve when implementing ads
 
@@ -54,8 +66,7 @@ No ad SDK is initialized by this scaffold. Choose a provider-neutral public API 
 
 ## Suggested implementation order
 
-1. OMDb API contract, typed results/errors, and movie domain model.
-2. Search repository, PagingSource, query-driven ViewModel and list UI.
-3. Details and poster loading, then favorites repository and Room-backed UI.
-4. Clarify ad behavior, implement SDK provider boundary and AdMob adapter.
-5. Test search pagination/cancellation, favorites persistence, navigation restoration and ad policy; prepare the final submission only after review.
+1. Search PagingSource, query-driven ViewModel and list UI using the implemented repository.
+2. Details and poster loading, then favorites UI using the implemented repositories.
+3. Clarify ad behavior, implement SDK provider boundary and AdMob adapter.
+4. Test search pagination, real favorites persistence, navigation restoration and ad policy; prepare the final submission only after review.

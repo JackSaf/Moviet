@@ -11,6 +11,9 @@ interface FavoriteMovieDao {
     @Query("SELECT * FROM favorite_movies ORDER BY title COLLATE NOCASE, imdbId")
     fun observeFavorites(): Flow<List<FavoriteMovieEntity>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM favorite_movies WHERE imdbId = :imdbId)")
+    fun observeIsFavorite(imdbId: String): Flow<Boolean>
+
     @Upsert
     suspend fun upsert(movie: FavoriteMovieEntity)
 
