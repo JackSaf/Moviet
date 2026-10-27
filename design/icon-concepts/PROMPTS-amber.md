@@ -1,0 +1,18 @@
+# Amber palette adaptations
+
+Created with the built-in image_gen tool. Original mockups preserved; these are palette adaptations, not installed Android launcher resources. Color reference: user-supplied dark Moviet UI mockup with amber accents.
+
+## 4
+
+Edit target: 04-flat-film-monogram.png
+
+Use case: precise-object-edit. Recolor the existing Moviet icon mockup in Image 1 to match the color scheme of Image 2. Image 1 is the EDIT TARGET; Image 2 is ONLY a COLOR REFERENCE, not a layout or content reference. Keep the icon geometry, exact capital M silhouette, film perforations, all three icon presentations, their sizes, placement, crop and typography exactly as in Image 1. This is a palette-only adaptation, not a logo redesign.
+Palette: cinema black and near-black charcoal (#080A0C, #14191D), rich warm amber-orange (#FFB54F, #F59B34), pale warm cream (#FFE1AE), matching the reference's orange UI highlights and cream heading. Replace all teal tile backgrounds with near-black charcoal. Replace cyan portions of the film ribbon with warm amber-orange. Replace the ivory diagonal with pale warm cream. Film holes show the near-black background. For the presentation board use deep charcoal, with the lower-right card slightly lighter and a very restrained edge to separate it. Text "Moviet" should be off-white; concept number in amber. Keep backgrounds clean and untextured, preserving clear contrast around the dark icon tiles. No blue or teal left in the logo, no poster artwork, no phone screens copied from the color reference, no added objects, no text from Image 2. No metallic gold, no glitter, no extra glow, no watermark. Square output, same composition as Image 1. Preserve the crisp FLAT GEOMETRIC M of Image 1, with three large rectangular perforations in each leg. Maintain its clean flat graphic construction. Text remains exactly "04" and "Moviet".
+
+## 5
+
+Edit target: 05-soft-film-monogram.png
+
+Use case: precise-object-edit. Recolor the existing Moviet icon mockup in Image 1 to match the color scheme of Image 2. Image 1 is the EDIT TARGET; Image 2 is ONLY a COLOR REFERENCE, not a layout or content reference. Keep the icon geometry, exact capital M silhouette, film perforations, all three icon presentations, their sizes, placement, crop and typography exactly as in Image 1. This is a palette-only adaptation, not a logo redesign.
+Palette: cinema black and near-black charcoal (#080A0C, #14191D), rich warm amber-orange (#FFB54F, #F59B34), pale warm cream (#FFE1AE), matching the reference's orange UI highlights and cream heading. Replace all teal tile backgrounds with near-black charcoal. Replace cyan portions of the film ribbon with warm amber-orange. Replace the ivory diagonal with pale warm cream. Film holes show the near-black background. For the presentation board use deep charcoal, with the lower-right card slightly lighter and a very restrained edge to separate it. Text "Moviet" should be off-white; concept number in amber. Keep backgrounds clean and untextured, preserving clear contrast around the dark icon tiles. No blue or teal left in the logo, no poster artwork, no phone screens copied from the color reference, no added objects, no text from Image 2. No metallic gold, no glitter, no extra glow, no watermark. Square output, same composition as Image 1. Preserve the SOFT SCULPTED M of Image 1, with its continuous folded satin ribbon, rounded shoulders and smooth central valley, three perforations in each leg. Preserve the subtle existing volume and shading, now using warm amber shadows and cream highlights; no exaggerated shine. Text remains exactly "05" and "Moviet".
+

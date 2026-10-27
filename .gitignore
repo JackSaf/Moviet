@@ -1,0 +1,45 @@
+# Gradle / Kotlin / Android generated output
+.gradle/
+.kotlin/
+**/build/
+**/.cxx/
+**/.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+*.log
+
+# Machine-specific IDE state
+.idea/
+*.iml
+.vscode/
+local.properties
+
+# Credentials and signing
+secrets.properties
+keystore.properties
+*.jks
+*.keystore
+.env
+.env.*
+!.env.example
+google-services.json
+
+# Local agent state (shared instructions and skills stay in Git)
+.codex/
+.claude/settings.local.json
+.android/
+.tmp/
+
+# OS / editor output
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+
+# Keep Gradle wrapper and Room schemas under version control.
+!gradle/wrapper/gradle-wrapper.jar

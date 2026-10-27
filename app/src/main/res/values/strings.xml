@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Moviet</string>
+    <string name="search_welcome">Discover movies. Keep your favorites.</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty">Your favorite movies will appear here.</string>
+    <string name="navigate_back">Back</string>
+</resources>
