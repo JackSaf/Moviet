@@ -1,5 +1,7 @@
 <resources>
-    <style name="Theme.Moviet" parent="android:style/Theme.Material.NoActionBar">
+    <style name="Theme.Moviet" parent="Theme.Moviet.Base" />
+
+    <style name="Theme.Moviet.Base" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">@color/moviet_primary</item>
         <item name="android:colorBackground">@color/moviet_background</item>

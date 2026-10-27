@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Moviet" parent="Theme.Moviet.Base">
+        <item name="android:windowSplashScreenBackground">@color/moviet_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+</resources>
