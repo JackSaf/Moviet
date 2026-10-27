@@ -9,4 +9,7 @@ sealed interface NavigationRoute : NavKey {
 
     @Serializable
     data object Favorites : NavigationRoute
+
+    @Serializable
+    data class Details(val imdbId: String) : NavigationRoute
 }

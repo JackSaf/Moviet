@@ -30,7 +30,7 @@ Keep DTOs and serialization details in `data`, business models/contracts in `dom
 - Prefer a directly composed cold flow over launching a second collector from `onStart`. If a separate long-lived collector is necessary, hold its `Job` and guard against duplicate active collectors. Decide whether it should stop with subscribers or live until ViewModel clearing.
 - Use `flatMapLatest` when input changes invalidate previous work. Apply `distinctUntilChanged` and a named debounce duration to a query stream where appropriate. Preserve coroutine cancellation; do not turn `CancellationException` into a UI error.
 - Paging streams use `cachedIn(viewModelScope)` after query-dependent transformations. Do not recreate a Pager in a composable or on every recomposition.
-- The current SearchViewModel has static scaffold state and no data source. It deliberately performs no startup work; do not add a dummy fetch just to follow a pattern.
+- SearchViewModel uses immutable query state and `onAction(SearchAction)` for input, with `SearchEvent` for one-off navigation. It normalizes and debounces query changes, then uses `flatMapLatest(repository::observeSearchMovies)` and `cachedIn(viewModelScope)`. The repository owns Pager configuration and its PagingSource; Paging owns results, loading, errors and retry. Queries start only after result collection. Nonblank edits retain the current list until the debounced search changes; clearing input immediately emits empty results. Keep this unidirectional contract when implementing the search UI.
 
 Typical future state pipeline (adapt to the feature's types; this is not an existing repository API):
 
@@ -49,13 +49,13 @@ Map expected failures to typed results and UI state; keep refresh policies cance
 
 ## Compose and presentation
 
-- Split `*ScreenRoot` (ViewModel, lifecycle collection, navigation/event wiring) from `*Screen` (state and callbacks). Keep supporting UI under sibling `presentation/components` when it is substantial or reused.
+- Keep screen files focused on `*ScreenRoot` (ViewModel, lifecycle collection, navigation/event wiring), `*Screen` (screen-level layout, state and callbacks), and their previews. Move reusable or supporting composables into the sibling `presentation/components` package, grouped into focused files named for their UI responsibility (for example, `SearchHeader.kt`, `MovieResultRow.kt`, `DetailsHeader.kt`). Avoid generic catch-all files such as `SearchComponents.kt`.
 - In composable declarations and call sites, put `modifier` first whenever present. Stateless previews should not need Koin, a database, a network connection, or an Activity.
 - All app-authored user-visible strings belong in Android resources. Messages exposed by a ViewModel use `UiText.StringResource`; external text can use `UiText.Dynamic`. Resolve text in the UI, never by keeping a Context in a ViewModel. User input and movie titles remain strings.
 - Name meaningful limits, durations, storage keys, status values and conversion factors at their owner. Obvious index identities, empty values, SQL, serialization annotations and explicit preview fixtures may contain literals.
 - Reuse design-system spacing, color, typography and animation tokens. Keep component-specific named values close to the component. Prefer available space, weights, aspect ratios and min/max bounds over fixed card/panel dimensions.
 - For window-level adaptive decisions use `LocalWindowInfo.current.containerSize.width` converted with `LocalDensity`; use a named 600.dp breakpoint unless the design says otherwise. Do not use orientation or `BoxWithConstraints` for this purpose.
-- Keep composables shallow. Remove layout wrappers with no behavior and extract coherent sections rather than splitting every tiny function into a file.
+- Keep composables small and shallow. Remove layout wrappers with no behavior and extract coherent sections. Keep tightly related composables and their component-specific constants in the same file, using private helpers where possible (for example, `MovieIdentity` inside `DetailsHeader.kt` and the loading indicator inside `SearchResults.kt`). Split separate responsibilities into separate files when they are reused or independently substantial; do not require one file for every tiny function.
 - Enable edge-to-edge in activities, handle system bars and IME, and apply Scaffold padding once. Pass padding to a lazy list's `contentPadding` when the content should scroll behind bars. Check dark theme, large fonts and narrow windows when changing layouts.
 
 ## Navigation and DI
@@ -71,7 +71,7 @@ Koin starts once from `MovietApplication`. Keep feature registrations in each fe
 - Use IMDb IDs as movie identity and lazy list keys. Normalize OMDb values such as `N/A` at the data boundary. Model HTTP errors and OMDb `Response=False` separately; the latter may use HTTP 200.
 - Keep OMDb authentication in the API client, use HTTPS, and keep API credentials out of Git and request logs. The injected OkHttp client is specifically for OMDb; do not reuse its API-key interceptor for poster hosts.
 - Use Retrofit + Kotlin Serialization for the API and Coil for posters. Do not add redundant networking/image stacks.
-- Paging integration is pending. Document OMDb page numbering and end-of-pagination behavior from its API before implementing PagingSource. Add ads as presentation list items, not database entities or fake movies.
+- Search paging belongs to the data layer behind `SearchRepository.observeSearchMovies`. OMDb uses one-based pages (1–100); the PagingSource uses ten-item pages and ends on an empty page, the total count, or page 100. Preserve typed errors and cancellation. Add ads as presentation list items, not database entities or fake movies.
 
 ## Build and verification
 

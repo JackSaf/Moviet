@@ -2,7 +2,7 @@
 
 The supplied cinema/carousel image is the visual reference. The theme takes its colors from the phone UI: near-black backgrounds, charcoal inputs and cards, off-white headings, muted metadata, and amber actions, ratings and selection. The surrounding landscape, presentation headings, movie posters and Russian annotations are not app UI assets or instructions.
 
-Only a dark design was supplied. `MovietTheme` deliberately stays dark regardless of device appearance; it does not use dynamic wallpaper colors. A light palette is not yet designed. Both existing scaffold screens inherit the theme; search, poster cards, thumbnail navigation and bottom navigation still need feature implementation.
+Only a dark design was supplied. `MovietTheme` deliberately stays dark regardless of device appearance; it does not use dynamic wallpaper colors. A light palette is not yet designed. Search and details now use the shared theme, including the search field, result rows, bottom navigation, posters and save action. The favorites ticket list and thumbnail navigation remain future feature work.
 
 ## Color roles
 

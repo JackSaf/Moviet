@@ -4,5 +4,7 @@ import com.jacks.moviet.R
 import com.jacks.moviet.core.presentation.util.UiText
 
 data class SearchState(
+    val query: String = "",
+    val activeQuery: String = "",
     val welcome: UiText = UiText.StringResource(R.string.search_welcome),
 )
