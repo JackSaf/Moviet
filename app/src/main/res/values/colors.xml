@@ -1,0 +1,5 @@
+<resources>
+    <!-- Match the Compose background/primary to prevent a bright launch flash. -->
+    <color name="moviet_background">#080B0D</color>
+    <color name="moviet_primary">#FFB74D</color>
+</resources>

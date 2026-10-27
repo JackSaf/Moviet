@@ -1,0 +1,11 @@
+<resources>
+    <string name="theme_preview_search">Movie or series</string>
+    <string name="theme_preview_all">All</string>
+    <string name="theme_preview_genre">Sci-Fi</string>
+    <string name="theme_preview_movie">Orbit</string>
+    <string name="theme_preview_metadata">2024 · Sci-Fi · Drama</string>
+    <string name="theme_preview_rating">★ 8.6</string>
+    <string name="theme_preview_synopsis">The farther from Earth, the closer to yourself.</string>
+    <string name="theme_preview_save">Save to favorites</string>
+    <string name="theme_preview_error">Could not load movies. Try again.</string>
+</resources>

@@ -21,13 +21,16 @@ The source assignment is the user-supplied `JedyApps Android Home Assignment1 (2
 
 Create a reviewable Android Studio project foundation following applicable Notis conventions; configure dependencies, base packages, local agent skills, documentation, and Git ignore rules. Do not finish the assignment or create a first commit as part of this setup.
 
+Additional authorized work: implement the app theme from the supplied cinema/carousel design. This covers shared visual tokens and platform appearance; the carousel and search UI remain future feature work.
+
 ## Implemented foundation
 
 - Local checkout moved to `C:\Users\jacks\AndroidStudioProjects\Moviet` on 2026-10-27; the Cyrillic-path Gradle workaround was removed.
 - Android application `:app` and independent Android library `:SDK`, with the app depending on the library.
 - Application ID and namespace `com.jacks.moviet`, minimum API 28, compile/target API 37.
 - Version catalog and Gradle Wrapper with a distribution SHA-256 checksum; newest stable versions checked on 2026-10-26.
-- Compose light/dark theme and resource-based text; a minimal home screen and favorites placeholder with a working Navigation 3 back stack.
+- Design-based dark Compose theme: amber accents, charcoal surfaces, off-white text, sans-serif typography, rounded shapes and spacing tokens. The theme stays dark in both device appearance modes; platform launch colors and system bar icons match. Debug-only component previews cover light/dark system settings, narrow width and large text. See `docs/DESIGN_SYSTEM.md`.
+- Resource-based text; a minimal home screen and favorites placeholder with a working Navigation 3 back stack.
 - Koin application startup, feature modules, and an injected search ViewModel. Navigation entries own their ViewModels.
 - Room database version 1, favorites entity/DAO, schema export, and lazy DI registration. This plumbing is not yet connected to the favorites screen.
 - Retrofit, Kotlin Serialization, OMDb-scoped OkHttp configuration, and BuildConfig fields for the base URL and externally supplied API key without committing a credential. No API service or requests yet.
