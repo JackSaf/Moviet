@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -16,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jacks.moviet.core.designsystem.components.MoviePoster
+import com.jacks.moviet.core.designsystem.components.MovieTitle
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.domain.model.Movie
 import com.jacks.moviet.core.presentation.util.displayName
@@ -44,26 +45,51 @@ internal fun DetailsHeader(
             )
             MovieIdentity(modifier = Modifier.weight(1f), movie = movie, contentRating = contentRating)
         }
-    } else Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            MoviePoster(
-                modifier = Modifier.width(DetailsPosterWidth).aspectRatio(PosterAspectRatio),
-                movie = movie,
-                sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope,
-            )
-        }
-        MovieIdentity(movie = movie, contentRating = contentRating)
+    } else Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        MoviePoster(
+            modifier = Modifier.width(DetailsPosterWidth).aspectRatio(PosterAspectRatio),
+            movie = movie,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+        MovieIdentity(
+            modifier = Modifier.fillMaxWidth(),
+            movie = movie,
+            contentRating = contentRating,
+            centered = true,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun MovieIdentity(modifier: Modifier = Modifier, movie: Movie, contentRating: String?) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
-        Text(
+private fun MovieIdentity(
+    modifier: Modifier = Modifier,
+    movie: Movie,
+    contentRating: String?,
+    centered: Boolean = false,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+) {
+    val textAlign = if (centered) TextAlign.Center else TextAlign.Start
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(Spacing.small),
+        horizontalAlignment = if (centered) Alignment.CenterHorizontally else Alignment.Start,
+    ) {
+        MovieTitle(
             modifier = Modifier.testTag("details_movie_title"),
-            text = movie.title,
-            style = MaterialTheme.typography.headlineMedium,
+            movie = movie,
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = textAlign,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
         val metadata = listOfNotNull(movie.year, movie.type.displayName(), contentRating)
         if (metadata.isNotEmpty()) {
@@ -71,6 +97,7 @@ private fun MovieIdentity(modifier: Modifier = Modifier, movie: Movie, contentRa
                 text = metadata.joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = textAlign,
             )
         }
     }

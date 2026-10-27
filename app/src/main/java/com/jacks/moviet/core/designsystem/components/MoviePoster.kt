@@ -22,11 +22,13 @@ fun MoviePoster(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
+    val namespace = LocalMovieSharedContentNamespace.current
     val transitionModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "poster-${movie.imdbId}"),
+                sharedContentState = rememberSharedContentState(key = namespace to "poster-${movie.imdbId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
+                boundsTransform = MovieBoundsTransform,
             )
         }
     } else Modifier
