@@ -3,6 +3,7 @@
 - foreground.png: 1254×1254 PNG, RGBA; isolated amber/cream folded-film M with transparent surroundings and perforations. Padding is included.
 - background.png: 1254×1254 opaque PNG; full-bleed near-black charcoal gradient, no rounded corners.
 - preview.png: 512×512 composite for visual inspection, not an import layer.
+- Alignment corrected on 2026-10-27: foreground translated exactly 20 px upward without resampling or altering the mark; original saved as foreground-before-centering.png. Opaque bounds are x=275..979, y=429..823, centered to within half a pixel on the 1254×1254 canvas. Preview updated.
 
 Generated with the built-in image_gen tool on 2026-10-27 using design/icon-concepts/05-soft-film-monogram-amber.png as the reference. Preview rendered with System.Drawing. Alpha was checked at the canvas corner and a film perforation; composite visually inspected on the actual background.
 
