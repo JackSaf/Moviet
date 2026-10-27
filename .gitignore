@@ -28,7 +28,14 @@ keystore.properties
 !.env.example
 google-services.json
 
-# Local agent state (shared instructions and skills stay in Git)
+# Local development instructions, reference material and design explorations
+/AGENTS.md
+/.agents/
+/docs/
+/design/
+**/.gitkeep
+
+# Local agent state
 .codex/
 .claude/settings.local.json
 .android/

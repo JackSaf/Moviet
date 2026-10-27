@@ -1,38 +1,45 @@
 # Moviet
 
-Android-приложение для поиска фильмов через OMDb, просмотра деталей и сохранения избранного. Проект готовится для JedyApps Android Home Assignment.
+Android movie app for the JedyApps home assignment. Search OMDb, browse movie details, and save favorites locally with Room.
 
-Сейчас это собираемый каркас: Compose-тема, стартовый экран, переход к экрану-заготовке избранного, Navigation 3, Koin, настройка Room и Retrofit, отдельный Android Library модуль `SDK`. Поиск, Paging-поток, детали, подключение избранного к UI и реклама пока не реализованы.
+Implemented: paged keyword search, movie details, persistent favorites, loading/error/retry states, and adaptive list-detail navigation for wide windows. Search and Favorites retain their own selected movie and navigation state when switching tabs. The independent `SDK` module is reserved for advertising; ad integration is not implemented yet.
 
-## Открытие в Android Studio
+## Run
 
-1. Открыть корневую папку `Moviet` как существующий проект. Локальная копия: `C:\Users\jacks\AndroidStudioProjects\Moviet`.
-2. Выбрать встроенный JDK Android Studio для Gradle; требуется JDK 17 или новее.
-3. Установить Android SDK Platform 37 и выполнить Gradle Sync. Локальный путь к SDK хранится в игнорируемом `local.properties`.
-4. Запустить конфигурацию `app` на устройстве или эмуляторе с API 28+.
+1. Open the repository in Android Studio and install Android SDK Platform 37. The minimum device/emulator version is API 28.
+2. Use Android Studio's bundled JDK for Gradle. The checked-in Gradle JVM configuration selects JDK 25 and includes toolchain download URLs.
+3. Copy `secrets.properties.example` to `secrets.properties` and set your OMDb API key:
 
-Gradle Wrapper включён в репозиторий. Системная установка Gradle не нужна. Если `java` отсутствует в PATH, выставить `JAVA_HOME` на JBR своей Android Studio.
+   ```properties
+   omdb.apiKey=YOUR_OMDB_API_KEY
+   ```
+
+4. Sync Gradle and run the `app` configuration.
+
+The key can also be supplied through the `OMDB_API_KEY` environment variable or the `omdb.apiKey` Gradle property. Priority: Gradle property, environment variable, then `secrets.properties`. The local secrets file is ignored by Git. Builds and fixture-based unit tests work without a key; live searches and details require one. The key is embedded in the APK through BuildConfig.
+
+## Build and test
+
+Windows PowerShell:
 
 ```powershell
-.\gradlew.bat :app:assembleDebug :app:lintDebug --no-daemon
+.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
 ```
 
-На Linux/macOS: `sh ./gradlew :app:assembleDebug :app:lintDebug --no-daemon`.
+Linux/macOS:
 
-## Ключ OMDb
+```sh
+sh ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+```
 
-Для сборки и открытия каркаса ключ не требуется. Для будущих запросов скопировать `secrets.properties.example` в `secrets.properties` и заполнить `omdb.apiKey`. Также поддерживаются переменная окружения `OMDB_API_KEY` и Gradle property `omdb.apiKey`; приоритет: Gradle property → окружение → файл. Запросы в стартовом экране пока не выполняются.
+The Gradle Wrapper is included. Debug APK output: `app/build/outputs/apk/debug/app-debug.apk`.
 
-Локальный файл с ключом исключён из Git. Ключ попадает в APK через BuildConfig, поэтому такой механизм не скрывает его от пользователя APK. Ключ из примера задания в проект не перенесён.
+JVM tests cover API mapping and failures, paging, ViewModel state and cancellation, favorites repository behavior, dependency injection, and navigation. Real-device Room persistence and advertising are not covered by these tests.
 
-## Структура и документация
+## Structure
 
-- `app` — Android-приложение, пакеты `app`, `core`, `search`, `details`, `favorites`.
-- `SDK` — отдельный модуль для будущей рекламы; приложение уже зависит от него.
-- [Описание и статус проекта](docs/PROJECT.md) — требования, границы текущей базы и дальнейшая работа.
-- [Project conventions](docs/PROJECT_CONVENTIONS.md) — структура, загрузка данных, Compose, Koin, Room и Paging.
-- [Версии зависимостей](docs/DEPENDENCIES.md) — проверенные стабильные версии и источники.
-- [Skills](docs/SKILLS.md) — состав, происхождение и выбор нужных инструкций.
-- [AGENTS.md](AGENTS.md) — начальная точка для агента в новом чате.
+- `app`: application setup/navigation, shared `core` code, and `search`, `details`, `favorites` feature packages with data, domain, and presentation layers.
+- `SDK`: independent Android library for advertising, with no dependency on `app`.
+- `app/schemas`: versioned Room database schemas.
 
-Git уже инициализирован. Начальный коммит не создан, staging не выполнен, удалённый репозиторий не настроен. `.gitignore` исключает сборки, IDE-состояние, локальные пути, ключи и подписи; Room schemas, Wrapper и проектные skills остаются видимыми для Git.
+Built with Kotlin, Compose Material 3, Navigation 3, Paging, Room, Koin, Retrofit/OkHttp, Kotlin Serialization, and Coil. Dependency versions are pinned in `gradle/libs.versions.toml`.
