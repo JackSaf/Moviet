@@ -15,6 +15,6 @@ interface OmdbApi {
         @Query("page") page: Int = OmdbConfig.FIRST_PAGE,
     ): Response<OmdbSearchResponseDto>
 
-    @GET(".")
+    @GET(".?plot=full")
     suspend fun getMovie(@Query("i") imdbId: String): Response<OmdbMovieDto>
 }

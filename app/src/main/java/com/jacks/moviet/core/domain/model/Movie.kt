@@ -5,4 +5,5 @@ data class Movie(
     val title: String,
     val posterUrl: String?,
     val type: MovieType,
+    val year: String? = null,
 )

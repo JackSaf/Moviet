@@ -8,6 +8,7 @@ import com.jacks.moviet.core.network.data.OmdbApi
 import com.jacks.moviet.core.network.data.dto.OmdbMovieDto
 import com.jacks.moviet.core.network.data.dto.OmdbSearchResponseDto
 import com.jacks.moviet.details.data.OmdbDetailsRepository
+import com.jacks.moviet.details.domain.MovieDetails
 import com.jacks.moviet.search.data.OmdbSearchRepository
 import com.jacks.moviet.search.domain.MovieSearchPage
 import com.jacks.moviet.testutil.omdbApi
@@ -36,7 +37,7 @@ class OmdbRepositoriesTest {
         assertEquals(
             NetworkResult.Success(
                 MovieSearchPage(
-                    movies = listOf(Movie("tt1234567", "A & B", null, MovieType.UNKNOWN)),
+                    movies = listOf(Movie("tt1234567", "A & B", null, MovieType.UNKNOWN, "2026")),
                     totalResults = 21,
                     page = 2,
                 ),
@@ -119,12 +120,13 @@ class OmdbRepositoriesTest {
                 "Poster":"https://example.com/poster.jpg","Type":"series"}""",
             onRequest = { request ->
                 assertEquals("tt1234567", request.url.queryParameter("i"))
+                assertEquals("full", request.url.queryParameter("plot"))
                 assertEquals(null, request.url.queryParameter("s"))
             },
         )
         assertEquals(
             NetworkResult.Success(
-                Movie("tt1234567", "Example", "https://example.com/poster.jpg", MovieType.SERIES),
+                MovieDetails(Movie("tt1234567", "Example", "https://example.com/poster.jpg", MovieType.SERIES)),
             ),
             OmdbDetailsRepository(api).getMovie(" tt1234567 "),
         )
@@ -134,6 +136,25 @@ class OmdbRepositoriesTest {
     fun `blank IMDb ID fails locally`() = runBlocking {
         val repository = OmdbDetailsRepository(omdbApi(onRequest = { fail("Unexpected request") }))
         assertEquals(NetworkResult.Failure(NetworkError.InvalidRequest), repository.getMovie(" "))
+    }
+
+    @Test
+    fun `details maps rich fields and hides unavailable metadata`() = runBlocking {
+        val result = OmdbDetailsRepository(omdbApi(
+            """{"Response":"True","imdbID":"tt123","Title":"Example","Type":"series",
+                "Year":"2008–2013","Plot":" Full story. ","Genre":"Crime, Drama",
+                "Runtime":"49 min","Rated":"TV-MA","imdbRating":"9.5","Director":"N/A",
+                "Actors":"Actor One, Actor Two","totalSeasons":"5","Poster":"N/A"}""",
+        )).getMovie("tt123") as NetworkResult.Success
+        assertEquals("Full story.", result.data.plot)
+        assertEquals("Crime, Drama", result.data.genres)
+        assertEquals("2008–2013", result.data.movie.year)
+        assertEquals("49 min", result.data.runtime)
+        assertEquals("TV-MA", result.data.contentRating)
+        assertEquals("9.5", result.data.imdbRating)
+        assertEquals("5", result.data.seasons)
+        assertEquals(null, result.data.director)
+        assertEquals(null, result.data.movie.posterUrl)
     }
 
     @Test

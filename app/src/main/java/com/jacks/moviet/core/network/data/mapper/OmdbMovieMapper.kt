@@ -15,4 +15,5 @@ internal fun OmdbMovieDto.toDomain(): Movie = Movie(
         ?: throw SerializationException("Missing movie title"),
     posterUrl = poster.normalizedOmdbValue(),
     type = type.toMovieType(),
+    year = year.normalizedOmdbValue(),
 )
