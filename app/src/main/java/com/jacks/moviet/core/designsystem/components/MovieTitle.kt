@@ -27,12 +27,14 @@ fun MovieTitle(
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val namespace = LocalMovieSharedContentNamespace.current
+    val overlayClip = LocalMovieSharedOverlayClip.current
     val transitionModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             Modifier.sharedBounds(
                 sharedContentState = rememberSharedContentState(key = namespace to "title-${movie.imdbId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 boundsTransform = MovieBoundsTransform,
+                clipInOverlayDuringTransition = overlayClip,
                 // Scale each endpoint's text layout without rewrapping it on every frame.
                 resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
                     contentScale = ContentScale.Fit,

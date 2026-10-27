@@ -28,6 +28,7 @@ fun MovieMetadata(
     if (metadata.isEmpty()) return
 
     val namespace = LocalMovieSharedContentNamespace.current
+    val overlayClip = LocalMovieSharedOverlayClip.current
     val transitionModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
         with(sharedTransitionScope) {
             // Keep details-only metadata outside these shared text bounds.
@@ -35,6 +36,7 @@ fun MovieMetadata(
                 sharedContentState = rememberSharedContentState(key = namespace to "metadata-${movie.imdbId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 boundsTransform = MovieBoundsTransform,
+                clipInOverlayDuringTransition = overlayClip,
                 resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
                     contentScale = ContentScale.Fit,
                     alignment = if (textAlign == TextAlign.Center) Alignment.Center else Alignment.CenterStart,

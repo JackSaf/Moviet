@@ -26,8 +26,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -35,6 +38,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jacks.moviet.R
+import com.jacks.moviet.core.designsystem.components.LocalMovieSharedOverlayClip
+import com.jacks.moviet.core.designsystem.components.rememberMovieListOverlayClip
 import com.jacks.moviet.core.designsystem.components.ScreenMessage
 import com.jacks.moviet.core.designsystem.theme.MovietMotion
 import com.jacks.moviet.core.designsystem.theme.Spacing
@@ -50,10 +55,17 @@ internal fun FavoriteTickets(
     selectedMovieId: String?,
     compactLayout: Boolean,
     sharedTransitionScope: SharedTransitionScope?,
+    sharedTransitionRootCoordinates: LayoutCoordinates?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     onAction: (FavoritesAction) -> Unit,
 ) {
     val direction = LocalLayoutDirection.current
+    val density = LocalDensity.current
+    val overlayClip = rememberMovieListOverlayClip(
+        animatedVisibilityScope = animatedVisibilityScope.takeIf { sharedTransitionScope != null },
+        rootCoordinates = sharedTransitionRootCoordinates,
+        headerBottomPx = with(density) { contentPadding.calculateTopPadding().toPx() },
+    )
     val listState = rememberLazyListState()
     LazyColumn(
         modifier = modifier.fillMaxSize().consumeWindowInsets(contentPadding).testTag("favorite_tickets"),
@@ -95,16 +107,18 @@ internal fun FavoriteTickets(
                         fadeOutSpec = MovietMotion.defaultEffects(),
                     ),
                 ) {
-                    FavoriteTicket(
-                        movie = movie,
-                        selected = movie.imdbId == selectedMovieId,
-                        compact = compactLayout,
-                        removing = movie.imdbId in state.removingIds,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        onClick = { onAction(FavoritesAction.MovieClick(movie)) },
-                        onRemove = { onAction(FavoritesAction.RemoveMovie(movie.imdbId)) },
-                    )
+                    CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
+                        FavoriteTicket(
+                            movie = movie,
+                            selected = movie.imdbId == selectedMovieId,
+                            compact = compactLayout,
+                            removing = movie.imdbId in state.removingIds,
+                            sharedTransitionScope = sharedTransitionScope,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            onClick = { onAction(FavoritesAction.MovieClick(movie)) },
+                            onRemove = { onAction(FavoritesAction.RemoveMovie(movie.imdbId)) },
+                        )
+                    }
                     if (movie.imdbId in state.removalErrors) {
                         ScreenMessage(
                             modifier = Modifier.padding(top = Spacing.small),

@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
@@ -35,6 +36,7 @@ fun FavoritesScreenRoot(
     compactLayout: Boolean = false,
     navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
+    sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: FavoritesViewModel = koinViewModel(),
 ) {
@@ -52,6 +54,7 @@ fun FavoritesScreenRoot(
         compactLayout = compactLayout,
         navigationBarHeight = navigationBarHeight,
         sharedTransitionScope = sharedTransitionScope,
+        sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
         animatedVisibilityScope = animatedVisibilityScope,
         onAction = viewModel::onAction,
     )
@@ -66,6 +69,7 @@ fun FavoritesScreen(
     compactLayout: Boolean = false,
     navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
+    sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onAction: (FavoritesAction) -> Unit,
 ) {
@@ -90,6 +94,7 @@ fun FavoritesScreen(
             selectedMovieId = selectedMovieId,
             compactLayout = compactLayout,
             sharedTransitionScope = sharedTransitionScope,
+            sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
             animatedVisibilityScope = animatedVisibilityScope,
             onAction = onAction,
         )

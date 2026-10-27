@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
@@ -13,6 +15,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -39,6 +43,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     val layoutDirection = LocalLayoutDirection.current
     val listDetailStrategy = remember(useTwoPanes) { ListDetailScene.Strategy<NavKey>(useTwoPanes) }
     val moviePreviews = remember { mutableStateMapOf<NavigationRoute.MovieList, Movie>() }
+    var sharedLayoutCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
     val onBack = navigation::goBack
 
     NavigationScaffold(
@@ -50,7 +55,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         onFavoritesClick = dropUnlessResumed { navigation.selectTab(NavigationRoute.Favorites) },
     ) { navigationBarHeight ->
         val currentNavigationBarHeight by rememberUpdatedState(navigationBarHeight)
-        SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+        SharedTransitionLayout(
+            modifier = Modifier.fillMaxSize().onGloballyPositioned { sharedLayoutCoordinates = it },
+        ) {
             NavDisplay(
                 onBack = onBack,
                 sceneStrategies = listOf(listDetailStrategy),
@@ -82,6 +89,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 selectedMovieId = navigation.selectedMovieId(NavigationRoute.Search),
                                 compactLayout = LocalTwoPane.current,
                                 sharedTransitionScope = if (LocalTwoPane.current) null else this@SharedTransitionLayout,
+                                sharedTransitionRootCoordinates = sharedLayoutCoordinates,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 onMovieClick = { movie ->
                                     moviePreviews[NavigationRoute.Search] = movie
@@ -115,6 +123,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 selectedMovieId = navigation.selectedMovieId(NavigationRoute.Favorites),
                                 compactLayout = LocalTwoPane.current,
                                 sharedTransitionScope = if (LocalTwoPane.current) null else this@SharedTransitionLayout,
+                                sharedTransitionRootCoordinates = sharedLayoutCoordinates,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 onMovieClick = { movie ->
                                     moviePreviews[NavigationRoute.Favorites] = movie

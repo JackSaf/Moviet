@@ -5,14 +5,14 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.union
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Dp
@@ -43,6 +43,7 @@ fun SearchScreenRoot(
     compactLayout: Boolean = false,
     navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
+    sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
@@ -62,6 +63,7 @@ fun SearchScreenRoot(
         compactLayout = compactLayout,
         navigationBarHeight = navigationBarHeight,
         sharedTransitionScope = sharedTransitionScope,
+        sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
         animatedVisibilityScope = animatedVisibilityScope,
         onAction = viewModel::onAction,
     )
@@ -77,6 +79,7 @@ fun SearchScreen(
     compactLayout: Boolean = false,
     navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
+    sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onAction: (SearchAction) -> Unit,
 ) {
@@ -88,11 +91,10 @@ fun SearchScreen(
                 // Child controls consume their taps; only background taps dismiss input here.
                 detectTapGestures(onTap = { focusManager.clearFocus() })
             },
-        contentWindowInsets = WindowInsets.safeDrawing,
+        // Keep the list above whichever is taller: the shell navigation bar or IME.
+        // The shell bar stays at the window bottom and is covered by the keyboard.
+        contentWindowInsets = WindowInsets.safeDrawing.union(WindowInsets(bottom = navigationBarHeight)),
         topBar = { SearchHeader(query = state.query, compact = compactLayout, onAction = onAction) },
-        bottomBar = {
-            if (navigationBarHeight > 0.dp) Spacer(modifier = Modifier.height(navigationBarHeight))
-        },
     ) { innerPadding ->
         SearchResults(
             state = state,
@@ -101,6 +103,7 @@ fun SearchScreen(
             selectedMovieId = selectedMovieId,
             compactLayout = compactLayout,
             sharedTransitionScope = sharedTransitionScope,
+            sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
             animatedVisibilityScope = animatedVisibilityScope,
             onAction = onAction,
         )

@@ -27,9 +27,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -42,6 +45,8 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import com.jacks.moviet.R
+import com.jacks.moviet.core.designsystem.components.LocalMovieSharedOverlayClip
+import com.jacks.moviet.core.designsystem.components.rememberMovieListOverlayClip
 import com.jacks.moviet.core.designsystem.components.ScreenMessage
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.presentation.util.asUiText
@@ -62,10 +67,17 @@ internal fun SearchResults(
     selectedMovieId: String?,
     compactLayout: Boolean,
     sharedTransitionScope: SharedTransitionScope?,
+    sharedTransitionRootCoordinates: LayoutCoordinates?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     onAction: (SearchAction) -> Unit,
 ) {
     val direction = LocalLayoutDirection.current
+    val density = LocalDensity.current
+    val overlayClip = rememberMovieListOverlayClip(
+        animatedVisibilityScope = animatedVisibilityScope.takeIf { sharedTransitionScope != null },
+        rootCoordinates = sharedTransitionRootCoordinates,
+        headerBottomPx = with(density) { contentPadding.calculateTopPadding().toPx() },
+    )
     val listState = rememberLazyListState()
     val focusManager = LocalFocusManager.current
     LaunchedEffect(listState, focusManager) {
@@ -119,14 +131,16 @@ internal fun SearchResults(
                 }
                 items(count = movies.itemCount, key = movies.itemKey { it.movie.imdbId }, contentType = { "movie" }) { index ->
                     movies[index]?.movie?.let { movie ->
-                        MovieResultRow(
-                            movie = movie,
-                            selected = selectedMovieId == movie.imdbId,
-                            compact = compactLayout,
-                            sharedTransitionScope = sharedTransitionScope,
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            onClick = { onAction(SearchAction.MovieClick(movie)) },
-                        )
+                        CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
+                            MovieResultRow(
+                                movie = movie,
+                                selected = selectedMovieId == movie.imdbId,
+                                compact = compactLayout,
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                onClick = { onAction(SearchAction.MovieClick(movie)) },
+                            )
+                        }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
