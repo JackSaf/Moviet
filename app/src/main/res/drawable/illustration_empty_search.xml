@@ -1,0 +1,40 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="180dp"
+    android:height="120dp"
+    android:viewportWidth="180"
+    android:viewportHeight="120">
+
+    <!-- One film frame, distinct from the stacked tickets in Favorites. -->
+    <group android:translateX="18" android:translateY="18">
+        <group android:rotation="-10" android:pivotX="65" android:pivotY="40">
+            <path
+                android:pathData="M6,0 H124 Q130,0 130,6 V74 Q130,80 124,80 H6 Q0,80 0,74 V6 Q0,0 6,0 Z"
+                android:strokeColor="#384148"
+                android:strokeWidth="0.7">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:startX="0" android:startY="0" android:endX="130" android:endY="80" android:type="linear">
+                        <item android:offset="0" android:color="#2B3338" />
+                        <item android:offset="1" android:color="#1B2226" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path
+                android:pathData="M31,10 H99 Q103,10 103,14 V66 Q103,70 99,70 H31 Q27,70 27,66 V14 Q27,10 31,10 Z"
+                android:fillColor="#303A40" />
+            <path
+                android:pathData="M9,9 H17 V18 H9 Z M9,24 H17 V33 H9 Z M9,39 H17 V48 H9 Z M9,54 H17 V63 H9 Z M113,9 H121 V18 H113 Z M113,24 H121 V33 H113 Z M113,39 H121 V48 H113 Z M113,54 H121 V63 H113 Z"
+                android:fillColor="#657078" />
+        </group>
+    </group>
+
+    <path
+        android:pathData="M136,75 A23,23 0,1 1,90,75 A23,23 0,1 1,136,75"
+        android:strokeColor="@color/moviet_primary"
+        android:strokeWidth="7" />
+    <path
+        android:pathData="M130,92 L148,110"
+        android:strokeColor="@color/moviet_primary"
+        android:strokeWidth="10"
+        android:strokeLineCap="round" />
+</vector>

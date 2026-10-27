@@ -43,6 +43,14 @@ private fun AdaptiveNavigationPreview() {
     val strategy = remember(windowWidth) { ListDetailScene.Strategy<NavKey>(useListDetail(windowWidth)) }
     val backStack = rememberNavBackStack(NavigationRoute.Search, NavigationRoute.Details(movie.imdbId))
     MovietTheme {
+      NavigationScaffold(
+        modifier = Modifier.fillMaxSize(),
+        useTwoPanes = useListDetail(windowWidth),
+        showNavigation = showMovieNavigation(backStack, useListDetail(windowWidth)),
+        favoritesSelected = false,
+        onSearchClick = {},
+        onFavoritesClick = {},
+      ) { navigationBarHeight ->
         NavDisplay(
             modifier = Modifier.fillMaxSize(),
             backStack = backStack,
@@ -50,6 +58,7 @@ private fun AdaptiveNavigationPreview() {
             entryProvider = entryProvider {
                 entry<NavigationRoute.Search>(metadata = ListDetailScene.listPane()) {
                     SearchScreen(
+                        navigationBarHeight = navigationBarHeight,
                         state = SearchState(query = "Batman", activeQuery = "Batman"),
                         movies = movies,
                         selectedMovieId = movie.imdbId,
@@ -78,5 +87,6 @@ private fun AdaptiveNavigationPreview() {
                 }
             },
         )
+      }
     }
 }

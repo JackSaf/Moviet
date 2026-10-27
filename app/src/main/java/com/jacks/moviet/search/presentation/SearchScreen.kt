@@ -3,15 +3,20 @@ package com.jacks.moviet.search.presentation
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,7 +29,6 @@ import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.core.presentation.util.ObserveAsEvents
 import com.jacks.moviet.search.domain.MovieSearchResult
 import com.jacks.moviet.search.presentation.components.SearchHeader
-import com.jacks.moviet.search.presentation.components.SearchNavigation
 import com.jacks.moviet.search.presentation.components.SearchResults
 import kotlinx.coroutines.flow.flowOf
 import org.koin.compose.viewmodel.koinViewModel
@@ -37,6 +41,7 @@ fun SearchScreenRoot(
     onMovieClick: (Movie) -> Unit,
     selectedMovieId: String? = null,
     compactLayout: Boolean = false,
+    navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: SearchViewModel = koinViewModel(),
@@ -55,6 +60,7 @@ fun SearchScreenRoot(
         movies = movies,
         selectedMovieId = selectedMovieId,
         compactLayout = compactLayout,
+        navigationBarHeight = navigationBarHeight,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
         onAction = viewModel::onAction,
@@ -69,16 +75,24 @@ fun SearchScreen(
     movies: LazyPagingItems<MovieSearchResult>,
     selectedMovieId: String? = null,
     compactLayout: Boolean = false,
+    navigationBarHeight: Dp = 0.dp,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onAction: (SearchAction) -> Unit,
 ) {
-    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val focusManager = LocalFocusManager.current
     Scaffold(
-        modifier = modifier.testTag("search_screen"),
+        modifier = modifier
+            .testTag("search_screen")
+            .pointerInput(focusManager) {
+                // Child controls consume their taps; only background taps dismiss input here.
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            },
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = { SearchHeader(query = state.query, compact = compactLayout, onAction = onAction) },
-        bottomBar = { if (!keyboardVisible) SearchNavigation(onFavoritesClick = { onAction(SearchAction.FavoritesClick) }) },
+        bottomBar = {
+            if (navigationBarHeight > 0.dp) Spacer(modifier = Modifier.height(navigationBarHeight))
+        },
     ) { innerPadding ->
         SearchResults(
             state = state,

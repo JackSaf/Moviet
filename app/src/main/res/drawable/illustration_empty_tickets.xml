@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="180dp"
+    android:height="120dp"
+    android:viewportWidth="180"
+    android:viewportHeight="120">
+
+    <!-- Back ticket. Both perforations share the theme's amber resource. -->
+    <group android:translateX="57" android:translateY="14">
+        <group android:rotation="14" android:pivotX="58" android:pivotY="35">
+            <path
+                android:pathData="M6,0 H110 Q116,0 116,6 V24 A11,11 0,0 0,116,46 V64 Q116,70 110,70 H6 Q0,70 0,64 V46 A11,11 0,0 0,0,24 V6 Q0,0 6,0 Z"
+                android:strokeColor="#30383D"
+                android:strokeWidth="0.7">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:startX="0" android:startY="0" android:endX="116" android:endY="70" android:type="linear">
+                        <item android:offset="0" android:color="#20272B" />
+                        <item android:offset="1" android:color="#141A1E" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path
+                android:pathData="M92,4 V10 M92,15 V21 M92,26 V32 M92,37 V43 M92,48 V54 M92,59 V65"
+                android:strokeColor="@color/moviet_primary"
+                android:strokeWidth="1.6" />
+        </group>
+    </group>
+
+    <!-- Front ticket, with side notches and a bookmark on its solid body. -->
+    <group android:translateX="9" android:translateY="39">
+        <group android:rotation="-10" android:pivotX="58" android:pivotY="35">
+            <path
+                android:pathData="M6,0 H110 Q116,0 116,6 V24 A11,11 0,0 0,116,46 V64 Q116,70 110,70 H6 Q0,70 0,64 V46 A11,11 0,0 0,0,24 V6 Q0,0 6,0 Z"
+                android:strokeColor="#384148"
+                android:strokeWidth="0.7">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:startX="0" android:startY="0" android:endX="116" android:endY="70" android:type="linear">
+                        <item android:offset="0" android:color="#2B3338" />
+                        <item android:offset="1" android:color="#1B2226" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <path
+                android:pathData="M92,4 V10 M92,15 V21 M92,26 V32 M92,37 V43 M92,48 V54 M92,59 V65"
+                android:strokeColor="@color/moviet_primary"
+                android:strokeWidth="1.6" />
+            <path
+                android:pathData="M44,20 H60 Q64,20 64,24 V49 Q64,51 62,50 L52,43 L42,50 Q40,51 40,49 V24 Q40,20 44,20 Z"
+                android:fillColor="@color/moviet_primary" />
+        </group>
+    </group>
+</vector>

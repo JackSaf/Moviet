@@ -28,6 +28,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavMetadataKey
 import androidx.navigation3.runtime.contains
@@ -35,6 +36,7 @@ import androidx.navigation3.runtime.metadata
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+import com.jacks.moviet.core.designsystem.theme.MovietMotion
 
 internal val LocalTwoPane = compositionLocalOf { false }
 
@@ -49,12 +51,15 @@ internal data class ListDetailScene<T : Any>(
         CompositionLocalProvider(LocalTwoPane provides true) {
             Row(modifier = Modifier.fillMaxSize().testTag("list_detail_scene")) {
                 Box(modifier = Modifier.weight(ListPaneWeight).fillMaxHeight().recalculateWindowInsets()) { listEntry.Content() }
-                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                VerticalDivider(thickness = ListDetailDividerWidth, color = MaterialTheme.colorScheme.outlineVariant)
                 Box(modifier = Modifier.weight(DetailPaneWeight).fillMaxHeight().recalculateWindowInsets()) {
                     AnimatedContent(
                         targetState = detailEntry,
                         contentKey = { it?.contentKey ?: EmptyDetailKey },
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        transitionSpec = {
+                            (fadeIn(MovietMotion.defaultEffects()) togetherWith fadeOut(MovietMotion.defaultEffects()))
+                                .using(null)
+                        },
                         label = "Selected movie",
                     ) { entry ->
                         if (entry == null) DetailsPlaceholder() else entry.Content()
@@ -91,6 +96,7 @@ internal data class ListDetailScene<T : Any>(
     }
 }
 
-private const val ListPaneWeight = 0.4f
-private const val DetailPaneWeight = 0.6f
+internal const val ListPaneWeight = 0.4f
+internal const val DetailPaneWeight = 0.6f
+internal val ListDetailDividerWidth = 1.dp
 private const val EmptyDetailKey = "empty-detail"

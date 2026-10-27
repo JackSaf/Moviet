@@ -9,6 +9,7 @@ import com.jacks.moviet.details.domain.DetailsRepository
 import com.jacks.moviet.details.presentation.DetailsViewModel
 import com.jacks.moviet.favorites.data.RoomFavoritesRepository
 import com.jacks.moviet.favorites.domain.FavoritesRepository
+import com.jacks.moviet.favorites.presentation.FavoritesViewModel
 import com.jacks.moviet.search.data.OmdbSearchRepository
 import com.jacks.moviet.search.domain.SearchRepository
 import com.jacks.moviet.search.presentation.SearchViewModel
@@ -44,6 +45,9 @@ class RepositoryModulesTest {
             val detailsViewModel = koin.get<DetailsViewModel>()
             viewModelStore.put("details", detailsViewModel)
             assertNotNull(detailsViewModel)
+            val favoritesViewModel = koin.get<FavoritesViewModel>()
+            viewModelStore.put("favorites", favoritesViewModel)
+            assertNotNull(favoritesViewModel)
             assertSame(
                 koin.get<OmdbApiKeyInterceptor>(),
                 koin.get<OkHttpClient>().interceptors.single(),

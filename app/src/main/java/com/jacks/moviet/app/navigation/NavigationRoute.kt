@@ -3,13 +3,17 @@ package com.jacks.moviet.app.navigation
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface NavigationRoute : NavKey {
     @Serializable
-    data object Search : NavigationRoute
+    sealed interface MovieList : NavigationRoute
 
     @Serializable
-    data object Favorites : NavigationRoute
+    data object Search : MovieList
 
     @Serializable
-    data class Details(val imdbId: String) : NavigationRoute
+    data object Favorites : MovieList
+
+    @Serializable
+    data class Details(val imdbId: String, val source: MovieList = Search) : NavigationRoute
 }
