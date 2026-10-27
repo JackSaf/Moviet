@@ -19,7 +19,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,8 +40,10 @@ import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.core.presentation.util.asUiText
 import com.jacks.moviet.details.presentation.components.DetailSection
 import com.jacks.moviet.details.presentation.components.DetailsHeader
+import com.jacks.moviet.details.presentation.components.DetailsRatings
 import com.jacks.moviet.details.presentation.components.FavoriteMovieButton
 import com.jacks.moviet.details.presentation.components.MoviePlot
+import com.jacks.moviet.details.presentation.components.detailsContentReveal
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -87,6 +88,10 @@ fun DetailsScreen(
     onAction: (DetailsAction) -> Unit,
 ) {
     val movie = state.details?.movie ?: preview
+    val contentRevealModifier = Modifier.detailsContentReveal(
+        imdbId = movie?.imdbId,
+        isLoaded = state.details != null,
+    )
     Scaffold(
         modifier = modifier.testTag("details_screen"),
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -118,7 +123,6 @@ fun DetailsScreen(
                 item(key = "identity") {
                     DetailsHeader(
                         movie = movie,
-                        contentRating = state.details?.contentRating,
                         compactHeader = compactHeader,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
@@ -143,40 +147,42 @@ fun DetailsScreen(
                 }
             }
             state.details?.let { details ->
-                details.imdbRating?.let { rating ->
-                    item(key = "rating") {
-                        Text(
-                            text = stringResource(R.string.movie_imdb_rating, rating),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                if (details.imdbRating != null || details.contentRating != null) {
+                    item(key = "ratings") {
+                        DetailsRatings(
+                            modifier = contentRevealModifier,
+                            imdbRating = details.imdbRating,
+                            contentRating = details.contentRating,
                         )
                     }
                 }
                 item(key = "favorite") {
                     FavoriteMovieButton(
+                        modifier = contentRevealModifier,
                         isFavorite = state.isFavorite,
                         isSaving = state.isSavingFavorite,
                         hasError = state.favoriteError,
                         onClick = { onAction(DetailsAction.ToggleFavorite) },
                     )
                 }
-                details.genres?.let { item(key = "genres") { DetailSection(title = stringResource(R.string.movie_genres), text = it) } }
+                details.genres?.let { item(key = "genres") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_genres), text = it) } }
                 details.plot?.let { plot ->
                     item(key = "plot") {
-                        MoviePlot(imdbId = details.movie.imdbId, plot = plot)
+                        MoviePlot(modifier = contentRevealModifier, imdbId = details.movie.imdbId, plot = plot)
                     }
                 }
                 details.runtime?.let { runtime ->
                     item(key = "runtime") {
                         DetailSection(
+                            modifier = contentRevealModifier,
                             title = stringResource(if (details.movie.type == MovieType.SERIES) R.string.movie_series_runtime else R.string.movie_runtime),
                             text = runtime,
                         )
                     }
                 }
-                details.director?.let { item(key = "director") { DetailSection(title = stringResource(R.string.movie_director), text = it) } }
-                details.actors?.let { item(key = "actors") { DetailSection(title = stringResource(R.string.movie_actors), text = it) } }
-                details.seasons?.let { item(key = "seasons") { DetailSection(title = stringResource(R.string.movie_seasons), text = it) } }
+                details.director?.let { item(key = "director") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_director), text = it) } }
+                details.actors?.let { item(key = "actors") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_actors), text = it) } }
+                details.seasons?.let { item(key = "seasons") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_seasons), text = it) } }
             }
         }
     }

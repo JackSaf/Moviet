@@ -127,6 +127,7 @@ class FavoritesViewModelTest {
         assertTrue(viewModel.state.value.movies.isEmpty())
         assertTrue(viewModel.state.value.removingIds.isEmpty())
         assertTrue(viewModel.state.value.removalErrors.isEmpty())
+        assertEquals(movie, viewModel.state.value.undoRemoval?.movie)
     }
 
     @Test
@@ -140,6 +141,7 @@ class FavoritesViewModelTest {
         runCurrent()
         assertEquals(listOf(movie), viewModel.state.value.movies)
         assertEquals(setOf(movie.imdbId), viewModel.state.value.removalErrors)
+        assertNull(viewModel.state.value.undoRemoval)
         assertTrue(viewModel.state.value.removingIds.isEmpty())
         repository.failWrites = false
         viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
@@ -177,6 +179,107 @@ class FavoritesViewModelTest {
         assertEquals(0, repository.reads)
     }
 
+    @Test
+    fun `undo restores the removed movie once and clears the prompt`() = runTest(dispatcher) {
+        val viewModel = loadedViewModel(movie)
+        viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
+        runCurrent()
+        val undo = viewModel.state.value.undoRemoval!!
+        repository.addGate = CompletableDeferred()
+        viewModel.onAction(FavoritesAction.UndoRemove(undo.id))
+        viewModel.onAction(FavoritesAction.UndoRemove(undo.id))
+        viewModel.onAction(FavoritesAction.DismissUndo(undo.id))
+        runCurrent()
+        assertTrue(viewModel.state.value.undoRemoval!!.isRestoring)
+        assertEquals(1, repository.additions)
+        repository.addGate!!.complete(Unit)
+        runCurrent()
+        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertNull(viewModel.state.value.undoRemoval)
+        assertTrue(viewModel.state.value.removingIds.isEmpty())
+    }
+
+    @Test
+    fun `failed undo retains the movie for a successful retry`() = runTest(dispatcher) {
+        val viewModel = loadedViewModel(movie)
+        viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
+        runCurrent()
+        val id = viewModel.state.value.undoRemoval!!.id
+        repository.failWrites = true
+        viewModel.onAction(FavoritesAction.UndoRemove(id))
+        runCurrent()
+        assertTrue(viewModel.state.value.movies.isEmpty())
+        assertTrue(viewModel.state.value.undoRemoval!!.hasError)
+        assertFalse(viewModel.state.value.undoRemoval!!.isRestoring)
+        assertTrue(viewModel.state.value.removingIds.isEmpty())
+        repository.failWrites = false
+        viewModel.onAction(FavoritesAction.UndoRemove(id))
+        runCurrent()
+        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertNull(viewModel.state.value.undoRemoval)
+    }
+
+    @Test
+    fun `new removal replaces undo and ignores stale snackbar callbacks`() = runTest(dispatcher) {
+        val second = movie.copy(imdbId = "tt456", title = "Second movie")
+        val viewModel = loadedViewModel(movie, second)
+        viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
+        runCurrent()
+        val firstId = viewModel.state.value.undoRemoval!!.id
+        viewModel.onAction(FavoritesAction.RemoveMovie(second.imdbId))
+        runCurrent()
+        val latest = viewModel.state.value.undoRemoval!!
+        viewModel.onAction(FavoritesAction.DismissUndo(firstId))
+        viewModel.onAction(FavoritesAction.UndoRemove(firstId))
+        runCurrent()
+        assertEquals(latest, viewModel.state.value.undoRemoval)
+        assertEquals(0, repository.additions)
+        viewModel.onAction(FavoritesAction.UndoRemove(latest.id))
+        runCurrent()
+        assertEquals(listOf(second), viewModel.state.value.movies)
+    }
+
+    @Test
+    fun `dismissing undo keeps deletion persisted and prevents late restore`() = runTest(dispatcher) {
+        val viewModel = loadedViewModel(movie)
+        viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
+        runCurrent()
+        val id = viewModel.state.value.undoRemoval!!.id
+        viewModel.onAction(FavoritesAction.DismissUndo(id))
+        viewModel.onAction(FavoritesAction.UndoRemove(id))
+        runCurrent()
+        assertNull(viewModel.state.value.undoRemoval)
+        assertTrue(repository.movies.value.isEmpty())
+        assertEquals(0, repository.additions)
+    }
+
+    @Test
+    fun `finishing an older restore preserves the newer undo prompt`() = runTest(dispatcher) {
+        val second = movie.copy(imdbId = "tt456", title = "Second movie")
+        val viewModel = loadedViewModel(movie, second)
+        viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
+        runCurrent()
+        repository.addGate = CompletableDeferred()
+        viewModel.onAction(FavoritesAction.UndoRemove(viewModel.state.value.undoRemoval!!.id))
+        runCurrent()
+        viewModel.onAction(FavoritesAction.RemoveMovie(second.imdbId))
+        runCurrent()
+        val latest = viewModel.state.value.undoRemoval
+        repository.addGate!!.complete(Unit)
+        runCurrent()
+        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(latest, viewModel.state.value.undoRemoval)
+        assertEquals(second, latest!!.movie)
+    }
+
+    private fun kotlinx.coroutines.test.TestScope.loadedViewModel(vararg movies: Movie): FavoritesViewModel {
+        repository.movies.value = movies.toList()
+        return viewModel().also {
+            backgroundScope.launch { it.state.collect {} }
+            runCurrent()
+        }
+    }
+
     private fun viewModel() = FavoritesViewModel(repository).also { store.put("favorites", it) }
 
     private class FakeFavorites : FavoritesRepository {
@@ -184,10 +287,12 @@ class FavoritesViewModelTest {
         var reads = 0
         var activeCollectors = 0
         var removals = 0
+        var additions = 0
         var failReads = false
         var failWrites = false
         var removeGate: CompletableDeferred<Unit>? = null
         var readGate: CompletableDeferred<Unit>? = null
+        var addGate: CompletableDeferred<Unit>? = null
         override fun observeFavorites(): Flow<List<Movie>> = flow {
             reads++
             activeCollectors++
@@ -198,7 +303,12 @@ class FavoritesViewModelTest {
             } finally { activeCollectors-- }
         }
         override fun observeIsFavorite(imdbId: String): Flow<Boolean> = movies.map { list -> list.any { it.imdbId == imdbId } }
-        override suspend fun addFavorite(movie: Movie) { movies.value = movies.value + movie }
+        override suspend fun addFavorite(movie: Movie) {
+            additions++
+            addGate?.await()
+            check(!failWrites)
+            movies.value = movies.value.filterNot { it.imdbId == movie.imdbId } + movie
+        }
         override suspend fun removeFavorite(imdbId: String) {
             removals++
             removeGate?.await()

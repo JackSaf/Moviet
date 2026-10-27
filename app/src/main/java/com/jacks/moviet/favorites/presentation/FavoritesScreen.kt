@@ -22,6 +22,7 @@ import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.core.presentation.util.ObserveAsEvents
 import com.jacks.moviet.favorites.presentation.components.FavoriteTickets
 import com.jacks.moviet.favorites.presentation.components.FavoritesHeader
+import com.jacks.moviet.favorites.presentation.components.FavoritesSnackbarHost
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -74,6 +75,13 @@ fun FavoritesScreen(
         topBar = { FavoritesHeader(compact = compactLayout) },
         bottomBar = {
             if (navigationBarHeight > 0.dp) Spacer(modifier = Modifier.height(navigationBarHeight))
+        },
+        snackbarHost = {
+            FavoritesSnackbarHost(
+                undoRemoval = state.undoRemoval,
+                compactLayout = compactLayout,
+                onAction = onAction,
+            )
         },
     ) { innerPadding ->
         FavoriteTickets(

@@ -61,6 +61,29 @@ class RoomFavoritesRepositoryTest {
     }
 
     @Test
+    fun `saved favorites retain the year used by the shared subtitle`() = runBlocking {
+        val dao = FakeFavoriteMovieDao()
+        val repository = RoomFavoritesRepository(dao)
+        val movie = Movie("tt0816692", "Interstellar", null, MovieType.MOVIE, year = "2014")
+        repository.addFavorite(movie)
+
+        // Recreate the repository so this cannot pass through in-memory movie retention.
+        assertEquals(listOf(movie), RoomFavoritesRepository(dao).observeFavorites().first())
+    }
+
+    @Test
+    fun `saving an older favorite fills its missing year without duplicating it`() = runBlocking {
+        val dao = FakeFavoriteMovieDao()
+        dao.upsert(FavoriteMovieEntity("tt0903747", "Breaking Bad", null, "series"))
+        val repository = RoomFavoritesRepository(dao)
+        val movie = Movie("tt0903747", "Breaking Bad", null, MovieType.SERIES, year = "2008–2013")
+
+        assertEquals(null, repository.observeFavorites().first().single().year)
+        repository.addFavorite(movie)
+        assertEquals(listOf(movie), repository.observeFavorites().first())
+    }
+
+    @Test
     fun `unrecognized persisted type remains readable`() = runBlocking {
         val dao = FakeFavoriteMovieDao()
         dao.upsert(FavoriteMovieEntity("tt1234567", "Example", null, "new-type"))

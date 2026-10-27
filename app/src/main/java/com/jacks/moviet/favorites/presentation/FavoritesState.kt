@@ -8,6 +8,14 @@ data class FavoritesState(
     val hasLoadError: Boolean = false,
     val removingIds: Set<String> = emptySet(),
     val removalErrors: Set<String> = emptySet(),
+    val undoRemoval: UndoRemoval? = null,
+)
+
+data class UndoRemoval(
+    val id: Long,
+    val movie: Movie,
+    val isRestoring: Boolean = false,
+    val hasError: Boolean = false,
 )
 
 sealed interface FavoritesAction {
@@ -15,6 +23,8 @@ sealed interface FavoritesAction {
     data object Retry : FavoritesAction
     data class MovieClick(val movie: Movie) : FavoritesAction
     data class RemoveMovie(val imdbId: String) : FavoritesAction
+    data class UndoRemove(val id: Long) : FavoritesAction
+    data class DismissUndo(val id: Long) : FavoritesAction
 }
 
 sealed interface FavoritesEvent {

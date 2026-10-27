@@ -10,25 +10,23 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jacks.moviet.core.designsystem.components.MovieMetadata
 import com.jacks.moviet.core.designsystem.components.MoviePoster
 import com.jacks.moviet.core.designsystem.components.MovieTitle
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.domain.model.Movie
-import com.jacks.moviet.core.presentation.util.displayName
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun DetailsHeader(
     modifier: Modifier = Modifier,
     movie: Movie,
-    contentRating: String?,
     compactHeader: Boolean,
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
@@ -43,7 +41,7 @@ internal fun DetailsHeader(
                 modifier = Modifier.width(DetailsPanePosterWidth).aspectRatio(PosterAspectRatio),
                 movie = movie,
             )
-            MovieIdentity(modifier = Modifier.weight(1f), movie = movie, contentRating = contentRating)
+            MovieIdentity(modifier = Modifier.weight(1f), movie = movie)
         }
     } else Column(
         modifier = modifier.fillMaxWidth(),
@@ -59,7 +57,6 @@ internal fun DetailsHeader(
         MovieIdentity(
             modifier = Modifier.fillMaxWidth(),
             movie = movie,
-            contentRating = contentRating,
             centered = true,
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
@@ -72,7 +69,6 @@ internal fun DetailsHeader(
 private fun MovieIdentity(
     modifier: Modifier = Modifier,
     movie: Movie,
-    contentRating: String?,
     centered: Boolean = false,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -91,15 +87,13 @@ private fun MovieIdentity(
             sharedTransitionScope = sharedTransitionScope,
             animatedVisibilityScope = animatedVisibilityScope,
         )
-        val metadata = listOfNotNull(movie.year, movie.type.displayName(), contentRating)
-        if (metadata.isNotEmpty()) {
-            Text(
-                text = metadata.joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = textAlign,
-            )
-        }
+        MovieMetadata(
+            movie = movie,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = textAlign,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
     }
 }
 

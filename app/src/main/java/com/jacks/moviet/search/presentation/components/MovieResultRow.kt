@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,11 +20,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.jacks.moviet.core.designsystem.components.MovieMetadata
 import com.jacks.moviet.core.designsystem.components.MoviePoster
 import com.jacks.moviet.core.designsystem.components.MovieTitle
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.domain.model.Movie
-import com.jacks.moviet.core.presentation.util.displayName
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -61,10 +60,11 @@ internal fun MovieResultRow(
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                 )
-                val metadata = listOfNotNull(movie.year, movie.type.displayName()).joinToString(" · ")
-                if (metadata.isNotEmpty()) {
-                    Text(text = metadata, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                MovieMetadata(
+                    movie = movie,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
             }
         }
     }

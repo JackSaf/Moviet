@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jacks.moviet.R
 import com.jacks.moviet.core.designsystem.components.ScreenMessage
+import com.jacks.moviet.core.designsystem.theme.MovietMotion
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.favorites.presentation.FavoritesAction
 import com.jacks.moviet.favorites.presentation.FavoritesState
@@ -87,7 +88,13 @@ internal fun FavoriteTickets(
                 )
             }
             else -> items(state.movies, key = { it.imdbId }, contentType = { "ticket" }) { movie ->
-                Column {
+                Column(
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = MovietMotion.defaultEffects(),
+                        placementSpec = MovietMotion.defaultSpatial(),
+                        fadeOutSpec = MovietMotion.defaultEffects(),
+                    ),
+                ) {
                     FavoriteTicket(
                         movie = movie,
                         selected = movie.imdbId == selectedMovieId,
@@ -115,8 +122,8 @@ internal fun FavoriteTickets(
 private fun EmptyFavorites(modifier: Modifier = Modifier, compact: Boolean, onSearchClick: () -> Unit) {
     Column(
         modifier = modifier.fillMaxWidth().padding(
-            horizontal = Spacing.small,
-            vertical = if (compact) Spacing.extraSmall else Spacing.large,
+            horizontal = if (compact) 0.dp else Spacing.small,
+            vertical = if (compact) 0.dp else Spacing.large,
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -126,21 +133,21 @@ private fun EmptyFavorites(modifier: Modifier = Modifier, compact: Boolean, onSe
             painter = painterResource(R.drawable.illustration_empty_tickets),
             contentDescription = null,
         )
-        Spacer(modifier = Modifier.height(if (compact) Spacing.compact else Spacing.large))
+        Spacer(modifier = Modifier.height(if (compact) Spacing.small else Spacing.large))
         Text(
             modifier = Modifier.widthIn(max = EmptyTitleMaxWidth),
             text = stringResource(R.string.favorites_empty_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(if (compact) Spacing.small else Spacing.compact))
+        Spacer(modifier = Modifier.height(if (compact) Spacing.extraSmall else Spacing.compact))
         Text(
             text = stringResource(R.string.favorites_empty),
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(if (compact) Spacing.medium else Spacing.large))
+        Spacer(modifier = Modifier.height(if (compact) Spacing.compact else Spacing.large))
         Button(
             modifier = Modifier.widthIn(min = EmptyButtonMinWidth).heightIn(min = EmptyButtonMinHeight),
             onClick = onSearchClick,
@@ -151,7 +158,7 @@ private fun EmptyFavorites(modifier: Modifier = Modifier, compact: Boolean, onSe
 }
 
 private val EmptyTicketsWidth = 176.dp
-private val CompactEmptyTicketsWidth = 112.dp
+private val CompactEmptyTicketsWidth = 72.dp
 private const val EmptyTicketsAspectRatio = 180f / 120f
 private val EmptyTitleMaxWidth = 240.dp
 private val EmptyButtonMinWidth = 160.dp

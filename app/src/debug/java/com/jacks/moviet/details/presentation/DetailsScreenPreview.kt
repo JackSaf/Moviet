@@ -19,8 +19,21 @@ private fun DetailsLongTitlePreview() = PreviewDetails(title = "The Lord of the 
 @Composable
 private fun DetailsCompactHeaderPreview() = PreviewDetails(title = "Interstellar", compactHeader = true)
 
+@Preview(name = "Details content rating only", widthDp = 240, heightDp = 600, fontScale = 1.5f)
 @Composable
-private fun PreviewDetails(title: String, compactHeader: Boolean = false) {
+private fun DetailsContentRatingOnlyPreview() = PreviewDetails(title = "Interstellar", imdbRating = null)
+
+@Preview(name = "Details without content rating", widthDp = 360, heightDp = 800)
+@Composable
+private fun DetailsWithoutContentRatingPreview() = PreviewDetails(title = "Interstellar", contentRating = null)
+
+@Composable
+private fun PreviewDetails(
+    title: String,
+    compactHeader: Boolean = false,
+    imdbRating: String? = "8.7",
+    contentRating: String? = "PG-13",
+) {
     MovietTheme {
         DetailsScreen(
             state = DetailsState(
@@ -33,8 +46,8 @@ private fun PreviewDetails(title: String, compactHeader: Boolean = false) {
                         type = MovieType.MOVIE,
                         year = "2014",
                     ),
-                    contentRating = "PG-13",
-                    imdbRating = "8.7",
+                    contentRating = contentRating,
+                    imdbRating = imdbRating,
                     genres = "Adventure, Drama, Sci-Fi",
                     plot = "A team of explorers travel beyond this galaxy to discover whether mankind has a future among the stars.",
                     runtime = "169 min",

@@ -168,8 +168,8 @@ private fun ResultsHeading(
 private fun EmptySearch(modifier: Modifier = Modifier, compact: Boolean) {
     Column(
         modifier = modifier.fillMaxWidth().padding(
-            horizontal = Spacing.small,
-            vertical = if (compact) Spacing.extraSmall else Spacing.large,
+            horizontal = if (compact) 0.dp else Spacing.small,
+            vertical = if (compact) 0.dp else Spacing.large,
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -179,16 +179,16 @@ private fun EmptySearch(modifier: Modifier = Modifier, compact: Boolean) {
             painter = painterResource(R.drawable.illustration_empty_search),
             contentDescription = null,
         )
-        Spacer(modifier = Modifier.height(if (compact) Spacing.compact else Spacing.large))
+        Spacer(modifier = Modifier.height(if (compact) Spacing.small else Spacing.large))
         Text(
             text = stringResource(R.string.search_start_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(if (compact) Spacing.small else Spacing.compact))
+        Spacer(modifier = Modifier.height(if (compact) Spacing.extraSmall else Spacing.compact))
         Text(
             text = stringResource(R.string.search_start_message),
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -203,5 +203,5 @@ private fun LoadingResults(modifier: Modifier = Modifier) {
 }
 
 private val EmptyFilmWidth = 176.dp
-private val CompactEmptyFilmWidth = 112.dp
+private val CompactEmptyFilmWidth = 72.dp
 private const val EmptyFilmAspectRatio = 180f / 120f

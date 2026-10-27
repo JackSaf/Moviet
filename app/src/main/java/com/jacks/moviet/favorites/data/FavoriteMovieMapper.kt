@@ -10,6 +10,7 @@ internal fun FavoriteMovieEntity.toDomain(): Movie = Movie(
     title = title,
     posterUrl = posterUrl,
     type = type.toMovieType(),
+    year = year,
 )
 
 internal fun Movie.toEntity(): FavoriteMovieEntity = FavoriteMovieEntity(
@@ -17,4 +18,5 @@ internal fun Movie.toEntity(): FavoriteMovieEntity = FavoriteMovieEntity(
     title = title,
     posterUrl = posterUrl,
     type = type.toDataValue(),
+    year = year,
 )

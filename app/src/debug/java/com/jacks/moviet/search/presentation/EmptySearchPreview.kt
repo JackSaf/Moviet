@@ -22,6 +22,8 @@ private fun EmptySearchPhonePreview() = EmptySearchWithNavigation()
 private fun EmptySearchLargeTextPreview() = EmptySearchWithNavigation()
 
 @Preview(showBackground = true, widthDp = 240, heightDp = 400)
+@Preview(name = "Short list-detail pane", showBackground = true, widthDp = 240, heightDp = 360)
+@Preview(name = "Compact large text", showBackground = true, widthDp = 240, heightDp = 360, fontScale = 1.5f)
 @Composable
 private fun EmptySearchCompactPreview() = EmptySearchWithNavigation(compact = true)
 
