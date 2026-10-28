@@ -1,1 +1,2 @@
-# Provider-specific consumer rules belong here when an ad provider is implemented.
+# Google Mobile Ads ships its own consumer rules. Add only narrowly scoped rules here
+# if a future provider requires them.

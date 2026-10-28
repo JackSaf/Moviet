@@ -23,8 +23,10 @@ android {
 }
 
 dependencies {
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.ui)
+    // AdsService exposes Compose types to its consumers.
+    api(platform(libs.androidx.compose.bom))
+    api(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.play.services.ads)
     testImplementation(libs.junit4)
 }

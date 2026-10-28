@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,15 +30,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,8 +51,8 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import com.jacks.moviet.R
-import com.jacks.moviet.core.designsystem.components.LocalMovieSharedOverlayClip
 import com.jacks.moviet.core.designsystem.components.rememberMovieListOverlayClip
+import com.jacks.moviet.core.designsystem.components.LocalMovieSharedOverlayClip
 import com.jacks.moviet.core.designsystem.components.ScreenMessage
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.presentation.util.asUiText
@@ -57,6 +63,7 @@ import com.jacks.moviet.search.presentation.SearchContent
 import com.jacks.moviet.search.presentation.SearchState
 import com.jacks.moviet.search.presentation.contentFor
 import com.jacks.moviet.sdk.AdsService
+import com.jacks.moviet.sdk.NativeAdSlot
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -90,6 +97,21 @@ internal fun SearchResults(
     val retry = {
         focusManager.clearFocus()
         movies.retry()
+    }
+    val movieRow: @Composable (Int) -> Unit = { index ->
+        movies[index]?.movie?.let { movie ->
+            CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
+                MovieResultRow(
+                    movie = movie,
+                    selected = selectedMovieId == movie.imdbId,
+                    compact = compactLayout,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onClick = { onAction(SearchAction.MovieClick(movie)) },
+                )
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        }
     }
     val content = state.contentFor(movies.itemCount, movies.loadState.refresh)
     LazyColumn(
@@ -126,50 +148,39 @@ internal fun SearchResults(
                 )
             }
             is SearchContent.Results -> {
-                // Read presented metadata without triggering Paging prefetch from the heading.
                 val totalResults = movies.itemSnapshotList.items.first().totalResults
                 val showAds = ads != null && totalResults >= 3 && movies.itemCount >= 3
                 val movieKey = movies.itemKey { it.movie.imdbId }
                 item(key = "results_heading") {
                     ResultsHeading(totalResults = totalResults, isLoading = content.isLoading)
                 }
-                items(
-                    count = SearchAdPositions.itemCount(movies.itemCount, showAds),
-                    key = { index ->
-                        if (showAds && SearchAdPositions.isAd(index)) "native_ad_$index"
-                        else movieKey(if (showAds) SearchAdPositions.movieIndex(index) else index)
-                    },
-                    contentType = { index -> if (showAds && SearchAdPositions.isAd(index)) "ad" else "movie" },
-                ) { index ->
-                    if (showAds && SearchAdPositions.isAd(index)) {
-                        ads.NativeAd(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.small))
-                    } else {
-                        val movieIndex = if (showAds) SearchAdPositions.movieIndex(index) else index
-                        movies[movieIndex]?.movie?.let { movie ->
-                            CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
-                                MovieResultRow(
-                                    movie = movie,
-                                    selected = selectedMovieId == movie.imdbId,
-                                    compact = compactLayout,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    onClick = { onAction(SearchAction.MovieClick(movie)) },
-                                )
-                            }
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        }
+                if (showAds) {
+                    item(key = movieKey(0), contentType = "movie") {
+                        movieRow(0)
+                    }
+                    item(key = "native_ad_1", contentType = "ad") {
+                        ads.NativeAd(modifier = Modifier.fillMaxWidth(), slot = NativeAdSlot.FIRST, compact = compactLayout)
+                    }
+                    item(key = movieKey(1), contentType = "movie") {
+                        movieRow(1)
+                    }
+                    item(key = "native_ad_3", contentType = "ad") {
+                        ads.NativeAd(modifier = Modifier.fillMaxWidth(), slot = NativeAdSlot.SECOND, compact = compactLayout)
                     }
                 }
-                when (val append = movies.loadState.append) {
-                    is LoadState.Loading -> item(key = "append_loading") { LoadingResults() }
-                    is LoadState.Error -> item(key = "append_error") {
-                        ScreenMessage(
-                            title = stringResource(R.string.search_error_title),
-                            message = (append.error as? SearchPagingException)?.error?.asUiText()?.asString(),
-                            onRetry = retry,
-                        )
+                val remainingStart = if (showAds) 2 else 0
+                items(
+                    count = movies.itemCount - remainingStart,
+                    key = { offset -> movieKey(offset + remainingStart) },
+                    contentType = { "movie" },
+                ) { offset ->
+                    movieRow(offset + remainingStart)
+                }
+                val append = movies.loadState.append
+                if (append is LoadState.Loading || append is LoadState.Error) {
+                    item(key = "append_status") {
+                        AppendStatus(loadState = append, onRetry = retry)
                     }
-                    is LoadState.NotLoading -> Unit
                 }
             }
         }
@@ -177,20 +188,34 @@ internal fun SearchResults(
 }
 
 @Composable
-private fun ResultsHeading(
-    modifier: Modifier = Modifier,
-    totalResults: Int,
-    isLoading: Boolean,
-) {
-    Column(modifier = modifier) {
+private fun AppendStatus(loadState: LoadState, onRetry: () -> Unit) {
+    val density = LocalDensity.current
+    var errorHeightPx by remember(density) { mutableIntStateOf(0) }
+    when (loadState) {
+        is LoadState.Error -> ScreenMessage(
+            modifier = Modifier.onSizeChanged { errorHeightPx = it.height },
+            title = stringResource(R.string.search_error_title),
+            message = (loadState.error as? SearchPagingException)?.error?.asUiText()?.asString(),
+            onRetry = onRetry,
+        )
+        // Shrinking the last item at the scroll boundary makes LazyColumn clamp its position.
+        // Retain the measured error height through retries, including wrapped/large text.
+        is LoadState.Loading -> LoadingResults(
+            modifier = Modifier.heightIn(min = with(density) { errorHeightPx.toDp() }),
+        )
+        is LoadState.NotLoading -> Unit
+    }
+}
+
+@Composable
+private fun ResultsHeading(totalResults: Int, isLoading: Boolean) {
+    Column {
         Text(
             modifier = Modifier.padding(vertical = Spacing.small),
             text = pluralStringResource(R.plurals.search_results, totalResults, totalResults),
             style = MaterialTheme.typography.titleMedium,
         )
-        if (isLoading) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
+        if (isLoading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
     }
 }
 
