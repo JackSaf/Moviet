@@ -13,6 +13,8 @@ import com.jacks.moviet.favorites.presentation.FavoritesViewModel
 import com.jacks.moviet.search.data.OmdbSearchRepository
 import com.jacks.moviet.search.domain.SearchRepository
 import com.jacks.moviet.search.presentation.SearchViewModel
+import com.jacks.moviet.sdk.AdMobAdsService
+import com.jacks.moviet.sdk.AdsService
 import com.jacks.moviet.testutil.FakeFavoriteMovieDao
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertNotNull
@@ -39,6 +41,8 @@ class RepositoryModulesTest {
             assertSame(koin.get<DetailsRepository>(), koin.get<DetailsRepository>())
             assertSame(koin.get<FavoritesRepository>(), koin.get<FavoritesRepository>())
             assertSame(koin.get<OmdbApi>(), koin.get<OmdbApi>())
+            assertTrue(koin.get<AdsService>() is AdMobAdsService)
+            assertSame(koin.get<AdsService>(), koin.get<AdsService>())
             val searchViewModel = koin.get<SearchViewModel>()
             viewModelStore.put("search", searchViewModel)
             assertNotNull(searchViewModel)

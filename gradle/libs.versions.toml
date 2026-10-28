@@ -17,6 +17,7 @@ serialization = "1.12.0"
 coroutines = "1.11.0"
 coil = "3.6.3"
 junit4 = "4.13.2"
+play-services-ads = "25.5.0"
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -51,6 +52,7 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 junit4 = { module = "junit:junit", version.ref = "junit4" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "play-services-ads" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

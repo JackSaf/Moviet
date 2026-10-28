@@ -30,8 +30,10 @@ import com.jacks.moviet.core.presentation.util.ObserveAsEvents
 import com.jacks.moviet.search.domain.MovieSearchResult
 import com.jacks.moviet.search.presentation.components.SearchHeader
 import com.jacks.moviet.search.presentation.components.SearchResults
+import com.jacks.moviet.sdk.AdsService
 import kotlinx.coroutines.flow.flowOf
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -46,6 +48,7 @@ fun SearchScreenRoot(
     sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     viewModel: SearchViewModel = koinViewModel(),
+    ads: AdsService = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val movies = viewModel.movies.collectAsLazyPagingItems()
@@ -66,6 +69,7 @@ fun SearchScreenRoot(
         sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
         animatedVisibilityScope = animatedVisibilityScope,
         onAction = viewModel::onAction,
+        ads = ads,
     )
 }
 
@@ -82,6 +86,7 @@ fun SearchScreen(
     sharedTransitionRootCoordinates: LayoutCoordinates? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onAction: (SearchAction) -> Unit,
+    ads: AdsService? = null,
 ) {
     val focusManager = LocalFocusManager.current
     Scaffold(
@@ -106,6 +111,7 @@ fun SearchScreen(
             sharedTransitionRootCoordinates = sharedTransitionRootCoordinates,
             animatedVisibilityScope = animatedVisibilityScope,
             onAction = onAction,
+            ads = ads,
         )
     }
 }

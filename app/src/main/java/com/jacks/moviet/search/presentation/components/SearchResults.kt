@@ -56,6 +56,7 @@ import com.jacks.moviet.search.presentation.SearchAction
 import com.jacks.moviet.search.presentation.SearchContent
 import com.jacks.moviet.search.presentation.SearchState
 import com.jacks.moviet.search.presentation.contentFor
+import com.jacks.moviet.sdk.AdsService
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -70,6 +71,7 @@ internal fun SearchResults(
     sharedTransitionRootCoordinates: LayoutCoordinates?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     onAction: (SearchAction) -> Unit,
+    ads: AdsService?,
 ) {
     val direction = LocalLayoutDirection.current
     val density = LocalDensity.current
@@ -126,22 +128,36 @@ internal fun SearchResults(
             is SearchContent.Results -> {
                 // Read presented metadata without triggering Paging prefetch from the heading.
                 val totalResults = movies.itemSnapshotList.items.first().totalResults
+                val showAds = ads != null && totalResults >= 3 && movies.itemCount >= 3
+                val movieKey = movies.itemKey { it.movie.imdbId }
                 item(key = "results_heading") {
                     ResultsHeading(totalResults = totalResults, isLoading = content.isLoading)
                 }
-                items(count = movies.itemCount, key = movies.itemKey { it.movie.imdbId }, contentType = { "movie" }) { index ->
-                    movies[index]?.movie?.let { movie ->
-                        CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
-                            MovieResultRow(
-                                movie = movie,
-                                selected = selectedMovieId == movie.imdbId,
-                                compact = compactLayout,
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                onClick = { onAction(SearchAction.MovieClick(movie)) },
-                            )
+                items(
+                    count = SearchAdPositions.itemCount(movies.itemCount, showAds),
+                    key = { index ->
+                        if (showAds && SearchAdPositions.isAd(index)) "native_ad_$index"
+                        else movieKey(if (showAds) SearchAdPositions.movieIndex(index) else index)
+                    },
+                    contentType = { index -> if (showAds && SearchAdPositions.isAd(index)) "ad" else "movie" },
+                ) { index ->
+                    if (showAds && SearchAdPositions.isAd(index)) {
+                        ads.NativeAd(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.small))
+                    } else {
+                        val movieIndex = if (showAds) SearchAdPositions.movieIndex(index) else index
+                        movies[movieIndex]?.movie?.let { movie ->
+                            CompositionLocalProvider(LocalMovieSharedOverlayClip provides overlayClip) {
+                                MovieResultRow(
+                                    movie = movie,
+                                    selected = selectedMovieId == movie.imdbId,
+                                    compact = compactLayout,
+                                    sharedTransitionScope = sharedTransitionScope,
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    onClick = { onAction(SearchAction.MovieClick(movie)) },
+                                )
+                            }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         }
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
                 when (val append = movies.loadState.append) {
