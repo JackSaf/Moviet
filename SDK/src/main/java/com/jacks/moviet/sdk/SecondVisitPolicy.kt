@@ -1,20 +1,19 @@
 package com.jacks.moviet.sdk
 
-/** The initial foreground is visit one; the first return is visit two. */
-internal class SecondVisitPolicy(
-    private val store: VisitStore,
-) {
-    val isConsumed: Boolean get() = store.foregroundCount >= SECOND_VISIT_FOREGROUND
+/** One opportunity per launch session: initial foreground, then first return. */
+internal class SecondVisitPolicy {
+    private var foregroundCount = 0
+
+    val isConsumed: Boolean get() = foregroundCount >= SECOND_VISIT_FOREGROUND
 
     fun onForeground(): Boolean {
         if (isConsumed) return false
-        // One persisted value avoids a partially updated count/consumed pair.
-        store.foregroundCount = store.foregroundCount.coerceAtLeast(0) + 1
+        foregroundCount++
         return isConsumed
     }
 
-    interface VisitStore {
-        var foregroundCount: Int
+    fun reset() {
+        foregroundCount = 0
     }
 }
 

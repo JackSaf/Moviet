@@ -107,8 +107,8 @@ The integration suite has been compiled but has not yet been executed on a devic
 The project uses [Google's demo ad IDs](https://developers.google.com/admob/android/test-ads), so no AdMob account setup is needed to run it.
 
 - For searches with at least three movies, native ads appear at zero-based positions 1 and 3 among the movie/ad rows, below the result heading.
-- An interstitial is attempted once on the second app visit: launch, leave the app, then return once. The opportunity is persisted across process restarts; rotation does not count as another visit. If the ad is unavailable at that moment, it is skipped.
-- To repeat the interstitial scenario, clear the app's storage or reinstall it. This also clears saved favorites.
+- An interstitial is attempted once per launch session: launch, leave the app, then return once. Further returns in that session show no interstitial. Closing the app's last Activity or starting a new process resets the in-memory count; rotation does not. Simply backgrounding and reopening the app continues the current session.
+- The SDK preloads one interstitial during the initial visit. If it is unavailable or expired at the first return, that session's opportunity is skipped. There are no delayed display timers or saved ad counters. To repeat the scenario, fully close and relaunch the app; saved favorites are retained.
 
 Before distributing an app with production ads, replace the sample application ID in `SDK/src/main/AndroidManifest.xml` and the test unit IDs in `AdMobInterstitialController.kt` and `AdMobNativeAdStore.kt`, and implement the appropriate consent flow before ad initialization.
 

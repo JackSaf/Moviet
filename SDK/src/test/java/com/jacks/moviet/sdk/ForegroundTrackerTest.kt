@@ -50,9 +50,7 @@ class ForegroundTrackerTest {
     @Test
     fun `second visit policy ignores rotations and in-app activities`() {
         val tracker = ForegroundTracker()
-        val policy = SecondVisitPolicy(object : SecondVisitPolicy.VisitStore {
-            override var foregroundCount = 0
-        })
+        val policy = SecondVisitPolicy()
         fun start(): Boolean = tracker.onActivityStarted() && policy.onForeground()
         assertFalse(start()) // Launch.
         tracker.onActivityStopped(isChangingConfigurations = true)

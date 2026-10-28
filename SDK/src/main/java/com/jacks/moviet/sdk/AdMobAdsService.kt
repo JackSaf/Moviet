@@ -12,23 +12,22 @@ import com.google.android.gms.ads.MobileAds
 
 /** AdMob entry point. Provider types and resource ownership stay inside this module. */
 class AdMobAdsService : AdsService {
-    private var initialized = false
-    private var ready by mutableStateOf(false)
-    private val nativeAds = AdMobNativeAdStore()
+    private var isInitialized = false
+    private var isSdkReady by mutableStateOf(false)
+    private val nativeAdStore = AdMobNativeAdStore()
 
     override fun initialize(application: Application) {
-        if (initialized) return
-        initialized = true
-        val visits = PreferencesVisitStore(application.getSharedPreferences(PREFERENCES, 0))
-        val interstitials = AdMobInterstitialController(application, SecondVisitPolicy(visits))
-        application.registerActivityLifecycleCallbacks(interstitials)
-        application.registerActivityLifecycleCallbacks(nativeAds)
+        if (isInitialized) return
+        isInitialized = true
+        val interstitialController = AdMobInterstitialController(application)
+        application.registerActivityLifecycleCallbacks(interstitialController)
+        application.registerActivityLifecycleCallbacks(nativeAdStore)
         val mainHandler = Handler(Looper.getMainLooper())
         Thread({
             MobileAds.initialize(application) {
                 mainHandler.post {
-                    ready = true
-                    interstitials.onSdkReady()
+                    isSdkReady = true
+                    interstitialController.onSdkReady()
                 }
             }
         }, "moviet-ads-init").start()
@@ -36,8 +35,6 @@ class AdMobAdsService : AdsService {
 
     @Composable
     override fun NativeAd(modifier: Modifier, slot: NativeAdSlot, compact: Boolean) {
-        AdMobNativeAd(modifier = modifier, ready = ready, slot = slot, compact = compact, store = nativeAds)
+        AdMobNativeAd(modifier = modifier, isSdkReady = isSdkReady, slot = slot, compact = compact, adStore = nativeAdStore)
     }
 }
-
-private const val PREFERENCES = "ads_visits"

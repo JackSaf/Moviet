@@ -2,32 +2,47 @@ package com.jacks.moviet.sdk
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class SecondVisitPolicyTest {
     @Test
-    fun `first return triggers the second visit and stays consumed across instances`() {
-        val store = MemoryStore()
-        val policy = SecondVisitPolicy(store)
-        assertFalse(policy.onForeground()) // launch
-        assertTrue(SecondVisitPolicy(store).onForeground()) // first return after process recreation
-        assertFalse(SecondVisitPolicy(store).onForeground())
-        assertEquals(2, store.foregroundCount)
+    fun `only the first return triggers within a launch session`() {
+        val policy = SecondVisitPolicy()
+        assertFalse(policy.onForeground()) // Launch.
+        assertTrue(policy.onForeground()) // First return.
+        repeat(10) { assertFalse(policy.onForeground()) }
+        assertTrue(policy.isConsumed)
     }
 
     @Test
-    fun `consumed counters including the old third-visit policy never trigger again`() {
-        for (count in listOf(2, 3)) {
-            val store = MemoryStore().apply { foregroundCount = count }
-            val policy = SecondVisitPolicy(store)
-            assertTrue(policy.isConsumed)
-            repeat(10) { assertFalse(policy.onForeground()) }
-            assertEquals(count, store.foregroundCount)
+    fun `new process starts a fresh session without saved counters`() {
+        repeat(3) {
+            val policy = SecondVisitPolicy()
+            assertFalse(policy.isConsumed)
+            assertFalse(policy.onForeground())
+            assertTrue(policy.onForeground())
+            assertFalse(policy.onForeground())
         }
     }
 
-    private class MemoryStore : SecondVisitPolicy.VisitStore {
-        override var foregroundCount = 0
+    @Test
+    fun `closing the last activity resets even if the process survives`() {
+        val policy = SecondVisitPolicy()
+        repeat(3) {
+            assertFalse(policy.onForeground())
+            assertTrue(policy.onForeground())
+            assertFalse(policy.onForeground())
+            policy.reset()
+            assertFalse(policy.isConsumed)
+        }
+    }
+
+    @Test
+    fun `closing before the first return does not make relaunch eligible`() {
+        val policy = SecondVisitPolicy()
+        assertFalse(policy.onForeground())
+        policy.reset()
+        assertFalse(policy.onForeground())
+        assertTrue(policy.onForeground())
     }
 }

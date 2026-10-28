@@ -16,17 +16,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 @Composable
 internal fun AdMobNativeAd(
     modifier: Modifier,
-    ready: Boolean,
+    isSdkReady: Boolean,
     slot: NativeAdSlot,
     compact: Boolean,
-    store: AdMobNativeAdStore,
+    adStore: AdMobNativeAdStore,
 ) {
     val context = LocalContext.current
     val rowHeight = (if (compact) COMPACT_HEIGHT else ROW_HEIGHT) *
         LocalDensity.current.fontScale.coerceAtLeast(1f)
-    val ad = store.ad(slot)
-    LaunchedEffect(ready, slot, store, ad) {
-        if (ready && ad == null) store.load(context, slot)
+    val ad = adStore.ad(slot)
+    LaunchedEffect(isSdkReady, slot, adStore, ad) {
+        if (isSdkReady && ad == null) adStore.load(context, slot)
     }
 
     // The slot has the same size before and after the ad loads.

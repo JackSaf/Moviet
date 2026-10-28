@@ -2,19 +2,22 @@ package com.jacks.moviet.sdk
 
 /** Converts Activity callbacks into app foregrounds without counting rotations or overlapping activities. */
 internal class ForegroundTracker {
-    private var startedActivities = 0
-    private var changingConfigurations = false
+    private var startedActivityCount = 0
+    private var isRecreatingActivity = false
+
+    val isInForeground: Boolean get() = startedActivityCount > 0
 
     fun onActivityStarted(): Boolean {
-        if (startedActivities++ != 0) return false
-        val isForeground = !changingConfigurations
-        changingConfigurations = false
+        startedActivityCount++
+        if (startedActivityCount != 1) return false
+        val isForeground = !isRecreatingActivity
+        isRecreatingActivity = false
         return isForeground
     }
 
     fun onActivityStopped(isChangingConfigurations: Boolean) {
-        check(startedActivities > 0) { "Activity stopped without a matching start" }
-        startedActivities--
-        if (startedActivities == 0) changingConfigurations = isChangingConfigurations
+        check(startedActivityCount > 0) { "Activity stopped without a matching start" }
+        startedActivityCount--
+        if (startedActivityCount == 0) isRecreatingActivity = isChangingConfigurations
     }
 }

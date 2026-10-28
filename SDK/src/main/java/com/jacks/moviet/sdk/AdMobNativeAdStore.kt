@@ -20,62 +20,69 @@ import com.google.android.gms.ads.nativead.NativeAd
 internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
     private val slots = NativeAdSlot.entries.associateWith { SlotState() }
     private val handler by lazy { Handler(Looper.getMainLooper()) }
-    private var createdActivities = 0
-    private var generation = 0
+    private var createdActivityCount = 0
+    private var cacheGeneration = 0
 
     fun ad(slot: NativeAdSlot): NativeAd? = slots.getValue(slot).ad
 
     fun load(context: Context, slot: NativeAdSlot) {
-        val state = slots.getValue(slot)
-        if (state.ad != null || state.loading) return
-        state.loading = true
-        val requestGeneration = generation
+        val slotState = slots.getValue(slot)
+        if (slotState.ad != null || slotState.isLoading) return
+        slotState.isLoading = true
+        slotState.shouldRetryLoad = false
+        val requestGeneration = cacheGeneration
         AdLoader.Builder(context.applicationContext, NATIVE_TEST_UNIT)
-            .forNativeAd { loaded ->
-                if (requestGeneration != generation) {
-                    loaded.destroy()
-                } else {
-                    state.loading = false
-                    state.ad = loaded
-                    state.loadedAt = SystemClock.elapsedRealtime()
-                    val expiration = Runnable { evict(state) }
-                    state.expiration = expiration
-                    handler.postDelayed(expiration, MAX_AGE_MILLIS)
+            .forNativeAd { loadedAd ->
+                if (requestGeneration != cacheGeneration) {
+                    loadedAd.destroy()
+                    return@forNativeAd
                 }
+                slotState.isLoading = false
+                slotState.ad = loadedAd
+                slotState.loadedAtMillis = SystemClock.elapsedRealtime()
+                val expirationCallback = Runnable { evict(slotState) }
+                slotState.expirationCallback = expirationCallback
+                handler.postDelayed(expirationCallback, MAX_AGE_MILLIS)
             }
             .withAdListener(object : AdListener() {
                 override fun onAdFailedToLoad(error: LoadAdError) {
-                    if (requestGeneration == generation) state.loading = false
+                    if (requestGeneration != cacheGeneration) return
+                    slotState.isLoading = false
+                    slotState.shouldRetryLoad = true
                 }
             })
             .build()
             .loadAd(AdRequest.Builder().build())
     }
 
-    private fun evict(state: SlotState) {
-        state.expiration?.let { handler.removeCallbacks(it) }
-        state.expiration = null
-        state.ad?.destroy()
-        state.ad = null
+    private fun evict(slotState: SlotState) {
+        slotState.expirationCallback?.let { handler.removeCallbacks(it) }
+        slotState.expirationCallback = null
+        slotState.ad?.destroy()
+        slotState.ad = null
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        createdActivities++
+        createdActivityCount++
     }
 
     override fun onActivityStarted(activity: Activity) {
         // Handler delays pause during deep sleep; elapsed time still expires cached ads on return.
         val now = SystemClock.elapsedRealtime()
-        slots.values.filter { it.ad != null && now - it.loadedAt >= MAX_AGE_MILLIS }.forEach(::evict)
+        for ((slot, slotState) in slots) {
+            if (slotState.ad != null && now - slotState.loadedAtMillis >= MAX_AGE_MILLIS) evict(slotState)
+            if (slotState.shouldRetryLoad) load(activity, slot)
+        }
     }
 
     override fun onActivityDestroyed(activity: Activity) {
-        createdActivities--
-        if (createdActivities != 0 || activity.isChangingConfigurations) return
-        generation++
-        slots.values.forEach { state ->
-            evict(state)
-            state.loading = false
+        createdActivityCount--
+        if (createdActivityCount != 0 || activity.isChangingConfigurations) return
+        cacheGeneration++
+        slots.values.forEach { slotState ->
+            evict(slotState)
+            slotState.isLoading = false
+            slotState.shouldRetryLoad = false
         }
     }
 
@@ -86,9 +93,10 @@ internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
 
     private class SlotState {
         var ad by mutableStateOf<NativeAd?>(null)
-        var loadedAt = 0L
-        var loading = false
-        var expiration: Runnable? = null
+        var loadedAtMillis = 0L
+        var isLoading = false
+        var shouldRetryLoad = false
+        var expirationCallback: Runnable? = null
     }
 }
 
