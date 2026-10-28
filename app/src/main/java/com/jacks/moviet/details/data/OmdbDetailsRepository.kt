@@ -16,6 +16,9 @@ class OmdbDetailsRepository(private val api: OmdbApi) : DetailsRepository {
         if (id.isEmpty()) return NetworkResult.Failure(NetworkError.InvalidRequest)
 
         return omdbRequest(request = { api.getMovie(id) }) { response ->
+            if (response.response == OmdbConfig.RESPONSE_TRUE && response.imdbId.normalizedOmdbValue() != id) {
+                return@omdbRequest NetworkResult.Failure(NetworkError.InvalidResponse)
+            }
             when (response.response) {
                 OmdbConfig.RESPONSE_TRUE -> NetworkResult.Success(
                     MovieDetails(

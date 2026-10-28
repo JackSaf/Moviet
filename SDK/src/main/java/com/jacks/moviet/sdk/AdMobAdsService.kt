@@ -11,26 +11,31 @@ import androidx.compose.ui.Modifier
 import com.google.android.gms.ads.MobileAds
 
 /** AdMob entry point. Provider types and resource ownership stay inside this module. */
-class AdMobAdsService : AdsService {
-    private var isInitialized = false
+class AdMobAdsService : AdsService by ProviderAdsService(AdMobAdsProvider())
+
+/** Only this adapter and its native views/cache know Google Mobile Ads types. */
+class AdMobAdsProvider : AdsProvider {
     private var isSdkReady by mutableStateOf(false)
     private val nativeAdStore = AdMobNativeAdStore()
 
-    override fun initialize(application: Application) {
-        if (isInitialized) return
-        isInitialized = true
-        val interstitialController = AdMobInterstitialController(application)
-        application.registerActivityLifecycleCallbacks(interstitialController)
+    private lateinit var application: Application
+
+    override fun initialize(application: Application, onReady: () -> Unit) {
+        this.application = application
         application.registerActivityLifecycleCallbacks(nativeAdStore)
         val mainHandler = Handler(Looper.getMainLooper())
         Thread({
             MobileAds.initialize(application) {
                 mainHandler.post {
                     isSdkReady = true
-                    interstitialController.onSdkReady()
+                    onReady()
                 }
             }
         }, "moviet-ads-init").start()
+    }
+
+    override fun loadInterstitial(onResult: (InterstitialAdHandle?) -> Unit) {
+        loadAdMobInterstitial(application, onResult)
     }
 
     @Composable

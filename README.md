@@ -36,3 +36,5 @@ The `app` module is organized by feature (`search`, `details`, `favorites`) with
 Google demo ad IDs are included. Native ads occupy zero-based positions 1 and 3 when a search has at least three movies. An interstitial is attempted on the first return after launch, once per launch session; unavailable ads are skipped. Fully close and relaunch the app to repeat it.
 
 Production ad IDs, consent handling, and release signing are not configured; release builds use debug signing.
+
+To integrate another provider, implement `AdsProvider` in `SDK` and replace the `AdMobAdsService` binding with `single<AdsService> { ProviderAdsService(YourAdsProvider()) }`. The shared service owns the return policy, interstitial cache, expiry and stale-callback rejection. The adapter owns initialization, native rendering/cleanup and vendor-specific interstitial handles. Screens and ViewModels stay unchanged. This is source-level extensibility: a new vendor still needs its dependency, credentials, manifest configuration and integration testing. Remove AdMob's dependency and manifest metadata when removing that adapter.

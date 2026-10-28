@@ -133,6 +133,31 @@ class OmdbRepositoriesTest {
     }
 
     @Test
+    fun `remote poster metadata only permits HTTPS URLs`() = runBlocking {
+        val invalidPosters = listOf(
+            "file:///data/private.png",
+            "content://media/private",
+            "android.resource://app/1",
+            "http://example.com/poster.jpg",
+            "broken",
+        )
+        for (poster in invalidPosters) {
+            val result = OmdbDetailsRepository(omdbApi(
+                """{"Response":"True","imdbID":"tt123","Title":"Example","Poster":"$poster"}""",
+            )).getMovie("tt123") as NetworkResult.Success
+            assertEquals(poster, null, result.data.movie.posterUrl)
+        }
+    }
+
+    @Test
+    fun `details rejects a successful response for another movie`() = runBlocking {
+        val result = OmdbDetailsRepository(omdbApi(
+            """{"Response":"True","imdbID":"tt456","Title":"Wrong movie"}""",
+        )).getMovie("tt123")
+        assertEquals(NetworkResult.Failure(NetworkError.InvalidResponse), result)
+    }
+
+    @Test
     fun `blank IMDb ID fails locally`() = runBlocking {
         val repository = OmdbDetailsRepository(omdbApi(onRequest = { fail("Unexpected request") }))
         assertEquals(NetworkResult.Failure(NetworkError.InvalidRequest), repository.getMovie(" "))

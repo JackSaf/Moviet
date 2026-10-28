@@ -6,6 +6,7 @@ import androidx.paging.PagingSource.LoadResult
 import androidx.paging.PagingState
 import com.jacks.moviet.core.domain.NetworkError
 import com.jacks.moviet.core.domain.NetworkResult
+import com.jacks.moviet.search.domain.MovieSearchPage
 import com.jacks.moviet.search.domain.MovieSearchResult
 import com.jacks.moviet.search.domain.SearchPagingException
 import com.jacks.moviet.testutil.searchMovies
@@ -73,6 +74,51 @@ class SearchPagingSourceTest {
 
         assertTrue(result.data.isEmpty())
         assertNull(result.nextKey)
+    }
+
+    @Test
+    fun `duplicate identities within a page fail before reaching the list`() = runTest {
+        val movie = searchMovies(1).single()
+        val source = SearchPagingSource(searchRepository { _, page ->
+            NetworkResult.Success(MovieSearchPage(listOf(movie, movie), 2, page))
+        }, "batman")
+        val result = source.load(LoadParams.Refresh(null, 10, false)) as LoadResult.Error
+        assertEquals(NetworkError.InvalidResponse, (result.throwable as SearchPagingException).error)
+    }
+
+    @Test
+    fun `overlapping pages fail but a corrected retry and reload succeed`() = runTest {
+        var overlap = true
+        val source = SearchPagingSource(searchRepository { _, page ->
+            NetworkResult.Success(MovieSearchPage(
+                searchMovies(10, startIndex = if (page == 1 || overlap) 0 else 10), 20, page,
+            ))
+        }, "batman")
+        assertTrue(source.load(LoadParams.Refresh(null, 10, false)) is LoadResult.Page)
+        val duplicate = source.load(LoadParams.Append(2, 10, false)) as LoadResult.Error
+        assertEquals(NetworkError.InvalidResponse, (duplicate.throwable as SearchPagingException).error)
+        overlap = false
+        assertTrue(source.load(LoadParams.Append(2, 10, false)) is LoadResult.Page)
+        assertTrue(source.load(LoadParams.Append(2, 10, false)) is LoadResult.Page)
+    }
+
+    @Test
+    fun `prepend after a middle page refresh rejects overlap and permits a corrected retry`() = runTest {
+        var overlap = true
+        val source = SearchPagingSource(searchRepository { _, page ->
+            val startIndex = if (page == 2 || overlap) 10 else 0
+            NetworkResult.Success(MovieSearchPage(searchMovies(10, startIndex), 30, page))
+        }, "batman")
+        assertTrue(source.load(LoadParams.Refresh(2, 10, false)) is LoadResult.Page)
+
+        val result = source.load(LoadParams.Prepend(1, 10, false)) as LoadResult.Error
+        assertEquals(NetworkError.InvalidResponse, (result.throwable as SearchPagingException).error)
+
+        overlap = false
+        val retry = source.load(LoadParams.Prepend(1, 10, false)) as LoadResult.Page
+        assertEquals(searchMovies(10), retry.data.map { it.movie })
+        assertNull(retry.prevKey)
+        assertEquals(2, retry.nextKey)
     }
 
     @Test

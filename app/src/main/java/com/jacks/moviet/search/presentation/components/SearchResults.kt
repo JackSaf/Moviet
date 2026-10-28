@@ -152,7 +152,7 @@ internal fun SearchResults(
             is SearchContent.Results -> {
                 val totalResults = movies.itemSnapshotList.items.first().totalResults
                 val showAds = ads != null && totalResults >= 3 && movies.itemCount >= 3
-                val movieKey = movies.itemKey { it.movie.imdbId }
+                val movieKey = movies.itemKey { "movie_${it.movie.imdbId}" }
                 item(key = "results_heading") {
                     ResultsHeading(totalResults = totalResults, isLoading = content.isLoading)
                 }

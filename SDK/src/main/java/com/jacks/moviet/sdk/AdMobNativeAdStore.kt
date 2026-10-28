@@ -21,15 +21,17 @@ internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
     private val slots = NativeAdSlot.entries.associateWith { SlotState() }
     private val handler by lazy { Handler(Looper.getMainLooper()) }
     private var createdActivityCount = 0
+    private var startedActivityCount = 0
     private var cacheGeneration = 0
 
     fun ad(slot: NativeAdSlot): NativeAd? = slots.getValue(slot).ad
 
     fun load(context: Context, slot: NativeAdSlot) {
         val slotState = slots.getValue(slot)
+        slotState.isRequested = true
+        if (startedActivityCount == 0) return
         if (slotState.ad != null || slotState.isLoading) return
         slotState.isLoading = true
-        slotState.shouldRetryLoad = false
         val requestGeneration = cacheGeneration
         AdLoader.Builder(context.applicationContext, NATIVE_TEST_UNIT)
             .forNativeAd { loadedAd ->
@@ -48,7 +50,6 @@ internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     if (requestGeneration != cacheGeneration) return
                     slotState.isLoading = false
-                    slotState.shouldRetryLoad = true
                 }
             })
             .build()
@@ -67,11 +68,12 @@ internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityStarted(activity: Activity) {
+        startedActivityCount++
         // Handler delays pause during deep sleep; elapsed time still expires cached ads on return.
         val now = SystemClock.elapsedRealtime()
         for ((slot, slotState) in slots) {
             if (slotState.ad != null && now - slotState.loadedAtMillis >= MAX_AGE_MILLIS) evict(slotState)
-            if (slotState.shouldRetryLoad) load(activity, slot)
+            if (slotState.isRequested && slotState.ad == null) load(activity, slot)
         }
     }
 
@@ -82,20 +84,20 @@ internal class AdMobNativeAdStore : Application.ActivityLifecycleCallbacks {
         slots.values.forEach { slotState ->
             evict(slotState)
             slotState.isLoading = false
-            slotState.shouldRetryLoad = false
+            slotState.isRequested = false
         }
     }
 
     override fun onActivityResumed(activity: Activity) = Unit
     override fun onActivityPaused(activity: Activity) = Unit
-    override fun onActivityStopped(activity: Activity) = Unit
+    override fun onActivityStopped(activity: Activity) { startedActivityCount-- }
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
 
     private class SlotState {
         var ad by mutableStateOf<NativeAd?>(null)
         var loadedAtMillis = 0L
         var isLoading = false
-        var shouldRetryLoad = false
+        var isRequested = false
         var expirationCallback: Runnable? = null
     }
 }
