@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -150,16 +149,12 @@ private fun TicketStub(
         enabled = !removing,
         onClick = onRemove,
     ) {
-        if (removing) {
-            CircularProgressIndicator(modifier = Modifier.size(BookmarkSize), color = colors.onPrimary, strokeWidth = ProgressStrokeWidth)
-        } else {
-            Icon(
-                modifier = Modifier.size(BookmarkSize),
-                painter = painterResource(R.drawable.ic_bookmark_filled),
-                contentDescription = null,
-                tint = colors.onPrimary,
-            )
-        }
+        Icon(
+            modifier = Modifier.size(BookmarkSize),
+            painter = painterResource(R.drawable.ic_bookmark_filled),
+            contentDescription = null,
+            tint = colors.onPrimary,
+        )
     }
 }
 
@@ -178,7 +173,6 @@ private val BookmarkSize = 32.dp
 private val NotchRadius = 7.dp
 private val PerforationDash = 4.dp
 private val TicketBorderWidth = 1.dp
-private val ProgressStrokeWidth = 2.dp
 private const val PosterAspectRatio = 2f / 3f
 private const val TicketTitleMaxLines = 3
 private const val PerforationAlpha = 0.35f
