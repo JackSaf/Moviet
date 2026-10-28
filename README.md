@@ -1,47 +1,128 @@
 # Moviet
 
-Android movie app for the JedyApps home assignment. Search OMDb, browse movie details, and save favorites locally with Room.
+A Kotlin Android app for discovering movies and series with [OMDb](https://www.omdbapi.com/), exploring their details, and keeping a local collection of favorites.
 
-Implemented: paged keyword search, movie details, persistent favorites, loading/error/retry states, adaptive list-detail navigation, and AdMob test ads through the independent `SDK` module. Search and Favorites retain their own selected movie and navigation state when switching tabs.
+## Features
 
-## Run
+- Keyword search with pagination, result counts, and loading, empty, error, and retry states.
+- Movie details with posters, plot, cast, ratings, and available metadata.
+- Favorites stored locally with Room, including removal with Undo.
+- Adaptive phone and two-pane layouts, shared poster transitions, and independent Search and Favorites navigation stacks.
+- Native and interstitial AdMob test ads through an independent advertising library.
 
-1. Open the repository in Android Studio and install Android SDK Platform 37. The minimum device/emulator version is API 28.
-2. Use Android Studio's bundled JDK for Gradle. The checked-in Gradle JVM configuration selects JDK 25 and includes toolchain download URLs.
-3. Copy `secrets.properties.example` to `secrets.properties` and set your OMDb API key:
+## Setup
+
+### Prerequisites
+
+- Android Studio with support for Android Gradle Plugin 9.4.
+- Android SDK Platform 37, installed through **Tools → SDK Manager**.
+- An emulator or Android device running Android 9 (API 28) or newer.
+- Internet access for dependency downloads, movie searches, details, posters, and test ads.
+
+Use Android Studio's bundled JDK to start Gradle. The checked-in Gradle JVM configuration selects JDK 25 and includes toolchain download URLs; the first sync may download that JDK. Gradle itself is supplied by the Wrapper, so a separate Gradle installation is unnecessary.
+
+### Configure the OMDb API key
+
+1. Request a key from the [OMDb API key page](https://www.omdbapi.com/apikey.aspx). The free account currently allows 1,000 requests per day.
+2. Check the email from OMDb and follow its activation instructions before using the key.
+3. In the repository root, beside `settings.gradle.kts`, copy `secrets.properties.example` to a new file named `secrets.properties`.
+
+   Windows PowerShell:
+
+   ```powershell
+   Copy-Item secrets.properties.example secrets.properties
+   ```
+
+   macOS/Linux:
+
+   ```sh
+   cp secrets.properties.example secrets.properties
+   ```
+
+4. Open `secrets.properties` and paste only the key after `omdb.apiKey=`, without quotes:
 
    ```properties
    omdb.apiKey=YOUR_OMDB_API_KEY
    ```
 
-4. Sync Gradle and run the `app` configuration.
+5. Sync Gradle, then build and run the app. Rebuild and reinstall whenever you change the key: it is read at build time.
 
-The key can also be supplied through the `OMDB_API_KEY` environment variable or the `omdb.apiKey` Gradle property. Priority: Gradle property, environment variable, then `secrets.properties`. The local secrets file is ignored by Git. Builds and fixture-based unit tests work without a key; live searches and details require one. The key is embedded in the APK through BuildConfig.
+`secrets.properties` is ignored by Git. Keep the real key out of `secrets.properties.example` and source files. The key is embedded in the APK through `BuildConfig`; it is not a server-side secret.
 
-AdMob currently uses Google's sample app ID and demo interstitial/native ad units, so it does not serve production ads. Before publishing, replace those IDs in `SDK` with registered IDs and add the appropriate consent flow before SDK initialization. The app calls the provider-neutral `AdsService` interface; the `SDK` module owns AdMob initialization, loading, display, and native-ad disposal. When a search has at least three movies, native slots occupy zero-based visible indexes 1 and 3. The interstitial is attempted once on the second foreground return after the initial launch, across process restarts; rotation does not count. If it has not loaded by that return, it is skipped rather than interrupting the user later.
+For CI or terminal builds, the key can also come from the `OMDB_API_KEY` environment variable or the `omdb.apiKey` Gradle property. Resolution order is Gradle property → environment variable → `secrets.properties`. An existing property or environment variable therefore overrides the file.
 
-## Build and test
+### Run the app
 
-Windows PowerShell:
+1. Open the repository root in Android Studio and let Gradle sync finish.
+2. Start an emulator from **Device Manager**, or connect a device with USB debugging enabled.
+3. Select the **app** run configuration and the target device, then click **Run**.
+4. Search for a title such as `Batman`, open a result, and tap **Save ticket** to add it to Favorites.
+
+No backend, account sign-in, or AdMob credentials are needed. Builds and automated tests work without an OMDb key; live search and details require an activated key. Saved favorites remain available locally, while opening their full details requires a network request.
+
+### Troubleshooting
+
+- **Search or details fail:** check the key and its activation, the device's internet connection, and the OMDb daily request limit. Confirm that `secrets.properties` is at the repository root, check for overriding environment/Gradle properties, and rebuild after editing it.
+- **SDK Platform 37 is missing:** install it in Android Studio's SDK Manager and sync again. Android Studio creates the machine-specific `local.properties` file for the SDK path.
+- **Gradle cannot find Java in a terminal:** set `JAVA_HOME` to your Android Studio installation's `jbr` directory. In the IDE, check **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**.
+
+## Build and verification
+
+From the repository root, run the JVM tests, lint for both modules, and a debug build:
 
 ```powershell
-.\gradlew.bat :SDK:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+.\gradlew.bat :SDK:testDebugUnitTest :app:testDebugUnitTest :SDK:lintDebug :app:lintDebug :app:assembleDebug --no-daemon
 ```
 
-Linux/macOS:
+On macOS/Linux, replace `.\gradlew.bat` with `./gradlew` in these commands. Terminal builds require `JAVA_HOME` and an Android SDK path, supplied by Android Studio's generated `local.properties` or your SDK environment configuration.
 
-```sh
-sh ./gradlew :SDK:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug --no-daemon
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+
+Build a release APK with R8 and resource shrinking:
+
+```powershell
+.\gradlew.bat :app:assembleRelease --no-daemon
 ```
 
-The Gradle Wrapper is included. Debug APK output: `app/build/outputs/apk/debug/app-debug.apk`.
+The release APK is written to `app/build/outputs/apk/release/app-release.apk`. Release builds currently use the local debug signing key for device testing. Distribution requires a dedicated signing configuration.
 
-JVM tests cover API mapping and failures, paging, ViewModel state and cancellation, favorites repository behavior, dependency injection, navigation, ad-slot mapping, and the second-return trigger. Real-device Room persistence and live ad rendering are not covered by these tests.
+JVM tests cover API mapping and failures, credential scoping, paging, ViewModel state and cancellation, favorites behavior, navigation policies, dependency injection, and ad foreground policies. Android integration tests cover Room migration/persistence and Compose navigation state restoration, using an isolated test Application.
 
-## Structure
+Build the Android test APK without a device:
 
-- `app`: application setup/navigation, shared `core` code, and `search`, `details`, `favorites` feature packages with data, domain, and presentation layers.
-- `SDK`: independent Android library with the provider-neutral ad interface and AdMob implementation; no dependency on `app`.
-- `app/schemas`: versioned Room database schemas.
+```powershell
+.\gradlew.bat :app:assembleDebugAndroidTest --no-daemon
+```
 
-Built with Kotlin, Compose Material 3, Navigation 3, Paging, Room, Koin, Retrofit/OkHttp, Kotlin Serialization, and Coil. Dependency versions are pinned in `gradle/libs.versions.toml`.
+With a single emulator or device connected, execute the Android tests:
+
+```powershell
+.\gradlew.bat :app:connectedDebugAndroidTest --no-daemon
+```
+
+The integration suite has been compiled but has not yet been executed on a device. Live ad callbacks and system navigation gestures also require device verification.
+
+## Advertising
+
+The project uses [Google's demo ad IDs](https://developers.google.com/admob/android/test-ads), so no AdMob account setup is needed to run it.
+
+- For searches with at least three movies, native ads appear at zero-based positions 1 and 3 among the movie/ad rows, below the result heading.
+- An interstitial is attempted once on the second app visit: launch, leave the app, then return once. The opportunity is persisted across process restarts; rotation does not count as another visit. If the ad is unavailable at that moment, it is skipped.
+- To repeat the interstitial scenario, clear the app's storage or reinstall it. This also clears saved favorites.
+
+Before distributing an app with production ads, replace the sample application ID in `SDK/src/main/AndroidManifest.xml` and the test unit IDs in `AdMobInterstitialController.kt` and `AdMobNativeAdStore.kt`, and implement the appropriate consent flow before ad initialization.
+
+## Project structure
+
+| Location | Responsibility |
+| --- | --- |
+| `app/.../app` | Application startup, dependency injection, and Navigation 3 host |
+| `app/.../core` | Shared models, networking, database, design system, and presentation utilities |
+| `app/.../search`, `details`, `favorites` | Feature data, domain, and presentation code |
+| `SDK` | Provider-neutral `AdsService` interface and AdMob implementation; independent of `app` |
+| `app/schemas` | Versioned Room database schemas |
+| `gradle/libs.versions.toml` | Pinned dependency and plugin versions |
+
+Compose screens receive immutable state and dispatch actions to entry-scoped ViewModels. Repositories own data access; API DTOs and Room entities are mapped to domain models. Room is the source of truth for favorites, and Paging owns search pagination. Koin wires dependencies, while advertising implementation details stay inside `SDK`.
+
+Built with Kotlin, Compose Material 3, Navigation 3, Room, Paging, Koin, Retrofit/OkHttp, Kotlin Serialization, and Coil.
