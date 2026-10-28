@@ -14,9 +14,13 @@ val secrets = Properties().apply {
     val secretsFile = rootProject.file("secrets.properties")
     if (secretsFile.exists()) secretsFile.inputStream().use(::load)
 }
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) localPropertiesFile.inputStream().use(::load)
+}
 val omdbApiKey = providers.gradleProperty("omdb.apiKey")
     .orElse(providers.environmentVariable("OMDB_API_KEY"))
-    .orElse(secrets.getProperty("omdb.apiKey", ""))
+    .orElse(localProperties.getProperty("omdb.apiKey", secrets.getProperty("omdb.apiKey", "")))
 
 fun String.asBuildConfigString(): String =
     "\"${replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")}\""
