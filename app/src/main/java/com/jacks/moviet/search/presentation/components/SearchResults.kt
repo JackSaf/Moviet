@@ -113,7 +113,6 @@ internal fun SearchResults(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
     }
-    val content = state.contentFor(movies.itemCount, movies.loadState.refresh)
     LazyColumn(
         modifier = modifier.fillMaxSize().consumeWindowInsets(contentPadding).testTag("search_results"),
         state = listState,
@@ -123,8 +122,11 @@ internal fun SearchResults(
             top = contentPadding.calculateTopPadding() + Spacing.small,
             bottom = contentPadding.calculateBottomPadding() + Spacing.medium,
         ),
-        verticalArrangement = if (content == SearchContent.Start) Arrangement.Center else Arrangement.Top,
+        verticalArrangement = if (state.query.isBlank()) Arrangement.Center else Arrangement.Top,
     ) {
+        // Lazy list content can be rebuilt before the enclosing composable recomposes.
+        // Decide from the same Paging snapshot used below, including after a clear.
+        val content = state.contentFor(movies.itemCount, movies.loadState.refresh)
         when (content) {
             SearchContent.Start -> item(key = "start") {
                 EmptySearch(compact = compactLayout)
