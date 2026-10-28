@@ -1,5 +1,30 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="120dp" android:height="180dp" android:viewportWidth="120" android:viewportHeight="180">
-    <path android:fillColor="#1E252A" android:pathData="M0,0h120v180h-120z" />
-    <path android:fillColor="#78828B" android:pathData="M40,72h40v36h-40z" />
-    <path android:fillColor="#1E252A" android:pathData="M44,76h32v28h-32zM40,80h40v4h-40zM40,96h40v4h-40zM48,72h4v36h-4zM68,72h4v36h-4z" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="180dp"
+    android:viewportWidth="120"
+    android:viewportHeight="180">
+
+    <path android:fillColor="#141A1E" android:pathData="M0,0 H120 V180 H0 Z" />
+
+    <!-- Match the charcoal film frame used by the empty Search illustration. -->
+    <group android:rotation="-10" android:pivotX="60" android:pivotY="90">
+        <path
+            android:pathData="M24,62 H96 Q102,62 102,68 V112 Q102,118 96,118 H24 Q18,118 18,112 V68 Q18,62 24,62 Z"
+            android:strokeColor="#384148"
+            android:strokeWidth="0.7">
+            <aapt:attr name="android:fillColor">
+                <gradient android:startX="18" android:startY="62" android:endX="102" android:endY="118" android:type="linear">
+                    <item android:offset="0" android:color="#2B3338" />
+                    <item android:offset="1" android:color="#1B2226" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path
+            android:pathData="M38,69 H82 Q85,69 85,72 V108 Q85,111 82,111 H38 Q35,111 35,108 V72 Q35,69 38,69 Z"
+            android:fillColor="#303A40" />
+        <path
+            android:pathData="M24,69 H29 V75 H24 Z M24,80 H29 V86 H24 Z M24,91 H29 V97 H24 Z M24,102 H29 V108 H24 Z M91,69 H96 V75 H91 Z M91,80 H96 V86 H91 Z M91,91 H96 V97 H91 Z M91,102 H96 V108 H91 Z"
+            android:fillColor="#657078" />
+    </group>
 </vector>

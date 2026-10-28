@@ -45,8 +45,9 @@ internal class MovieNavigationState(
         favoritesSelected = tab == NavigationRoute.Favorites
     }
 
-    fun openDetails(imdbId: String) {
-        activeStack.openDetails(imdbId)
+    fun openDetails(imdbId: String, source: NavigationRoute.MovieList = activeTab) {
+        // An outgoing entry can deliver a queued movie event after the selected tab changes.
+        stacks.getValue(source).openDetails(imdbId)
     }
 
     fun selectedMovieId(tab: NavigationRoute.MovieList): String? =

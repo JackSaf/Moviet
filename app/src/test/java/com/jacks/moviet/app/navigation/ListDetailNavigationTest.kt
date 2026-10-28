@@ -26,10 +26,12 @@ class ListDetailNavigationTest {
 
     @Test
     fun `narrow window falls back to a single pane with the same back stack`() {
-        val scene = with(ListDetailScene.Strategy<NavKey>(false)) {
-            SceneStrategyScope<NavKey>().calculateScene(listOf(list, detail))
+        for (entries in listOf(listOf(list, detail), listOf(list, favorites, detail))) {
+            val scene = with(ListDetailScene.Strategy<NavKey>(false)) {
+                SceneStrategyScope<NavKey>().calculateScene(entries)
+            }
+            assertNull(scene)
         }
-        assertNull(scene)
     }
 
     @Test
@@ -90,14 +92,6 @@ class ListDetailNavigationTest {
         assertEquals(listOf(favorites), scene.entries)
         assertNull(scene.detailEntry)
         assertEquals(listOf(list), scene.previousEntries)
-    }
-
-    @Test
-    fun `narrow favorites uses the standard single destination scene`() {
-        val scene = with(ListDetailScene.Strategy<NavKey>(false)) {
-            SceneStrategyScope<NavKey>().calculateScene(listOf(list, favorites, detail))
-        }
-        assertNull(scene)
     }
 
     @Test
@@ -215,6 +209,27 @@ class ListDetailNavigationTest {
             navigation.selectTab(tab)
             assertEquals(before, navigation.backStack)
         }
+    }
+
+    @Test
+    fun `delayed movie selection updates its originating tab after a tab switch`() {
+        val navigation = navigationState()
+        navigation.openDetails("search-original")
+        navigation.selectTab(NavigationRoute.Favorites)
+        navigation.openDetails("favorites-original")
+
+        navigation.openDetails("search-delayed", source = NavigationRoute.Search)
+
+        assertTrue(navigation.favoritesSelected)
+        assertEquals("favorites-original", navigation.selectedMovieId(NavigationRoute.Favorites))
+        assertEquals("search-delayed", navigation.selectedMovieId(NavigationRoute.Search))
+        navigation.selectTab(NavigationRoute.Search)
+
+        navigation.openDetails("favorites-delayed", source = NavigationRoute.Favorites)
+
+        assertFalse(navigation.favoritesSelected)
+        assertEquals("search-delayed", navigation.selectedMovieId(NavigationRoute.Search))
+        assertEquals("favorites-delayed", navigation.selectedMovieId(NavigationRoute.Favorites))
     }
 
     @Test

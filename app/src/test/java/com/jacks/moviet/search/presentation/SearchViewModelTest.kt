@@ -1,6 +1,7 @@
 package com.jacks.moviet.search.presentation
 
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.SavedStateHandle
 import androidx.paging.LoadState
 import androidx.paging.PagingDataEvent
 import androidx.paging.PagingDataPresenter
@@ -232,6 +233,7 @@ class SearchViewModelTest {
         runCurrent()
 
         assertEquals(20, presenter.snapshot().items.size)
+        assertEquals((0 until 20).map { "tt$it" }, presenter.snapshot().items.map { it.movie.imdbId })
         assertTrue(presenter.snapshot().items.all { it.totalResults == 123 })
     }
 
@@ -386,8 +388,38 @@ class SearchViewModelTest {
         assertEquals("batman", viewModel.state.value.query)
     }
 
-    private fun viewModel(repository: SearchRepository) = SearchViewModel(repository).also {
-        store.put("search", it)
+    private fun viewModel(repository: SearchRepository, savedState: SavedStateHandle = SavedStateHandle()) =
+        SearchViewModel(repository, savedState).also {
+            store.put("search", it)
+        }
+
+    @Test
+    fun `restored query fetches lazily and clearing persists across recreation`() = runTest(dispatcher) {
+        val requests = mutableListOf<String>()
+        val repository = searchRepository { query, page ->
+            requests += query
+            searchPage(page)
+        }
+        val savedState = SavedStateHandle()
+        viewModel(repository, savedState).onAction(SearchAction.QueryChanged(" batman "))
+        val restoredState = SavedStateHandle(savedState.keys().associateWith { savedState.get<Any?>(it) })
+        val restored = viewModel(repository, restoredState)
+        assertEquals(" batman ", restored.state.value.query)
+        runCurrent()
+        assertTrue(requests.isEmpty())
+        present(restored)
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals(listOf("batman"), requests)
+
+        restored.onAction(SearchAction.ClearQuery)
+        val clearedState = SavedStateHandle(restoredState.keys().associateWith { restoredState.get<Any?>(it) })
+        val cleared = viewModel(repository, clearedState)
+        present(cleared)
+        advanceTimeBy(300)
+        runCurrent()
+        assertEquals("", cleared.state.value.query)
+        assertEquals(listOf("batman"), requests)
     }
 
     @Test

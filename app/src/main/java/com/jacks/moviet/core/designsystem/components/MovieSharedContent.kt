@@ -11,15 +11,45 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.jacks.moviet.core.designsystem.theme.MovietMotion
 
 // Lists and their details share a namespace; separate tabs must never match each other.
 internal val LocalMovieSharedContentNamespace = compositionLocalOf<Any> { Unit }
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+internal fun Modifier.movieSharedTextBounds(
+    key: String,
+    textAlign: TextAlign,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+): Modifier {
+    if (sharedTransitionScope == null || animatedVisibilityScope == null) return this
+    val namespace = LocalMovieSharedContentNamespace.current
+    val overlayClip = LocalMovieSharedOverlayClip.current
+    return with(sharedTransitionScope) {
+        sharedBounds(
+            sharedContentState = rememberSharedContentState(key = namespace to key),
+            animatedVisibilityScope = animatedVisibilityScope,
+            boundsTransform = MovieBoundsTransform,
+            clipInOverlayDuringTransition = overlayClip,
+            // Scale each endpoint's text layout without rewrapping it on every frame.
+            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
+                contentScale = ContentScale.Fit,
+                alignment = if (textAlign == TextAlign.Center) Alignment.Center else Alignment.CenterStart,
+            ),
+        )
+    }
+}
 
 // Lists animate their overlay boundary with navigation, allowing shared content to travel freely.
 @OptIn(ExperimentalSharedTransitionApi::class)

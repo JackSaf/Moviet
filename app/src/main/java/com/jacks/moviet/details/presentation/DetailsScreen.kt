@@ -59,7 +59,7 @@ fun DetailsScreenRoot(
     onBackClick: () -> Unit,
     viewModel: DetailsViewModel = koinViewModel(),
 ) {
-    LaunchedEffect(imdbId) { viewModel.onAction(DetailsAction.LoadMovie(imdbId)) }
+    LaunchedEffect(imdbId, viewModel) { viewModel.onAction(DetailsAction.LoadMovie(imdbId)) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     DetailsScreen(
         modifier = modifier,
@@ -162,8 +162,18 @@ fun DetailsScreen(
                         isFavorite = state.isFavorite,
                         isSaving = state.isSavingFavorite,
                         hasError = state.favoriteError,
+                        enabled = state.isFavoriteLoaded,
                         onClick = { onAction(DetailsAction.ToggleFavorite) },
                     )
+                }
+                if (state.favoriteLoadError) {
+                    item(key = "favorite_read_error") {
+                        ScreenMessage(
+                            title = stringResource(R.string.favorites_load_error),
+                            message = stringResource(R.string.favorites_load_error_message),
+                            onRetry = { onAction(DetailsAction.RetryFavorite) },
+                        )
+                    }
                 }
                 details.genres?.let { item(key = "genres") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_genres), text = it) } }
                 details.plot?.let { plot ->

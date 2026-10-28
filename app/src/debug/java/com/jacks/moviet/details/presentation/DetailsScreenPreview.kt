@@ -38,6 +38,7 @@ private fun PreviewDetails(
         DetailsScreen(
             state = DetailsState(
                 isLoading = false,
+                isFavoriteLoaded = true,
                 details = MovieDetails(
                     movie = Movie(
                         imdbId = "preview",

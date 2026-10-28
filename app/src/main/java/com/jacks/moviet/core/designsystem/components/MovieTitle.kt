@@ -6,9 +6,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,25 +24,13 @@ fun MovieTitle(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
-    val namespace = LocalMovieSharedContentNamespace.current
-    val overlayClip = LocalMovieSharedOverlayClip.current
-    val transitionModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = namespace to "title-${movie.imdbId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = MovieBoundsTransform,
-                clipInOverlayDuringTransition = overlayClip,
-                // Scale each endpoint's text layout without rewrapping it on every frame.
-                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
-                    contentScale = ContentScale.Fit,
-                    alignment = if (textAlign == TextAlign.Center) Alignment.Center else Alignment.CenterStart,
-                ),
-            )
-        }
-    } else Modifier
     Text(
-        modifier = transitionModifier.then(modifier),
+        modifier = Modifier.movieSharedTextBounds(
+            key = "title-${movie.imdbId}",
+            textAlign = textAlign,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        ).then(modifier),
         text = movie.title,
         style = style,
         textAlign = textAlign,

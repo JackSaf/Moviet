@@ -36,6 +36,7 @@ internal fun FavoriteMovieButton(
     isSaving: Boolean,
     hasError: Boolean,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
     val containerColor by animateColorAsState(
@@ -52,7 +53,7 @@ internal fun FavoriteMovieButton(
         Button(
             modifier = Modifier.fillMaxWidth().testTag("toggle_favorite"),
             onClick = onClick,
-            enabled = !isSaving,
+            enabled = enabled && !isSaving,
             shape = MaterialTheme.shapes.large,
             colors = ButtonDefaults.buttonColors(
                 containerColor = containerColor,

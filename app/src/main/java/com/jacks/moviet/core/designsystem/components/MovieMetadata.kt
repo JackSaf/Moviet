@@ -6,9 +6,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.jacks.moviet.core.domain.model.Movie
@@ -27,26 +25,13 @@ fun MovieMetadata(
     val metadata = listOfNotNull(movie.year, movie.type.displayName())
     if (metadata.isEmpty()) return
 
-    val namespace = LocalMovieSharedContentNamespace.current
-    val overlayClip = LocalMovieSharedOverlayClip.current
-    val transitionModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-        with(sharedTransitionScope) {
-            // Keep details-only metadata outside these shared text bounds.
-            Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState(key = namespace to "metadata-${movie.imdbId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                boundsTransform = MovieBoundsTransform,
-                clipInOverlayDuringTransition = overlayClip,
-                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(
-                    contentScale = ContentScale.Fit,
-                    alignment = if (textAlign == TextAlign.Center) Alignment.Center else Alignment.CenterStart,
-                ),
-            )
-        }
-    } else Modifier
-
     Text(
-        modifier = transitionModifier.then(modifier),
+        modifier = Modifier.movieSharedTextBounds(
+            key = "metadata-${movie.imdbId}",
+            textAlign = textAlign,
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        ).then(modifier),
         text = metadata.joinToString(" · "),
         style = style,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

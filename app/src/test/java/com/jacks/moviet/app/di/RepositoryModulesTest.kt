@@ -1,6 +1,7 @@
 package com.jacks.moviet.app.di
 
 import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.SavedStateHandle
 import com.jacks.moviet.core.database.dao.FavoriteMovieDao
 import com.jacks.moviet.core.network.data.OmdbApi
 import com.jacks.moviet.core.network.utils.OmdbApiKeyInterceptor
@@ -23,6 +24,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import org.koin.core.parameter.parametersOf
 
 class RepositoryModulesTest {
     @Test
@@ -43,7 +45,7 @@ class RepositoryModulesTest {
             assertSame(koin.get<OmdbApi>(), koin.get<OmdbApi>())
             assertTrue(koin.get<AdsService>() is AdMobAdsService)
             assertSame(koin.get<AdsService>(), koin.get<AdsService>())
-            val searchViewModel = koin.get<SearchViewModel>()
+            val searchViewModel = koin.get<SearchViewModel> { parametersOf(SavedStateHandle()) }
             viewModelStore.put("search", searchViewModel)
             assertNotNull(searchViewModel)
             val detailsViewModel = koin.get<DetailsViewModel>()

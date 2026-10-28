@@ -4,44 +4,42 @@ import com.jacks.moviet.core.database.entity.FavoriteMovieEntity
 import com.jacks.moviet.core.domain.model.Movie
 import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.testutil.FakeFavoriteMovieDao
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RoomFavoritesRepositoryTest {
     @Test
-    fun `observers receive add and remove changes as domain movies`() = runBlocking {
-        withTimeout(5_000) {
-            val repository = RoomFavoritesRepository(FakeFavoriteMovieDao())
-            val movie = Movie("tt1234567", "Example", null, MovieType.MOVIE)
-            val lists = mutableListOf<List<Movie>>()
-            val statuses = mutableListOf<Boolean>()
-            val listJob = launch(start = CoroutineStart.UNDISPATCHED) {
-                repository.observeFavorites().take(3).toList(lists)
-            }
-            val statusJob = launch(start = CoroutineStart.UNDISPATCHED) {
-                repository.observeIsFavorite(movie.imdbId).take(3).toList(statuses)
-            }
-            repository.addFavorite(movie)
-            yield()
-            repository.removeFavorite(movie.imdbId)
-            listJob.join()
-            statusJob.join()
-            assertEquals(listOf(emptyList(), listOf(movie), emptyList()), lists)
-            assertEquals(listOf(false, true, false), statuses)
+    fun `observers receive add and remove changes as domain movies`() = runTest {
+        val repository = RoomFavoritesRepository(FakeFavoriteMovieDao())
+        val movie = Movie("tt1234567", "Example", null, MovieType.MOVIE)
+        val lists = mutableListOf<List<Movie>>()
+        val statuses = mutableListOf<Boolean>()
+        backgroundScope.launch {
+            repository.observeFavorites().take(3).toList(lists)
         }
+        backgroundScope.launch {
+            repository.observeIsFavorite(movie.imdbId).take(3).toList(statuses)
+        }
+        runCurrent()
+        repository.addFavorite(movie)
+        runCurrent()
+        repository.removeFavorite(movie.imdbId)
+        runCurrent()
+        assertEquals(listOf(emptyList(), listOf(movie), emptyList()), lists)
+        assertEquals(listOf(false, true, false), statuses)
     }
 
     @Test
-    fun `adding the same identity updates rather than duplicating a favorite`() = runBlocking {
+    fun `adding the same identity updates rather than duplicating a favorite`() = runTest {
         val repository = RoomFavoritesRepository(FakeFavoriteMovieDao())
         val movie = Movie("tt1234567", "Example", null, MovieType.EPISODE)
         repository.addFavorite(movie)
@@ -51,7 +49,7 @@ class RoomFavoritesRepositoryTest {
     }
 
     @Test
-    fun `every movie type round trips through the persisted representation`() = runBlocking {
+    fun `every movie type round trips through the persisted representation`() = runTest {
         val repository = RoomFavoritesRepository(FakeFavoriteMovieDao())
         MovieType.entries.forEach { type ->
             val movie = Movie("tt1234567", "Example", null, type)
@@ -61,7 +59,7 @@ class RoomFavoritesRepositoryTest {
     }
 
     @Test
-    fun `saved favorites retain the year used by the shared subtitle`() = runBlocking {
+    fun `saved favorites retain the year used by the shared subtitle`() = runTest {
         val dao = FakeFavoriteMovieDao()
         val repository = RoomFavoritesRepository(dao)
         val movie = Movie("tt0816692", "Interstellar", null, MovieType.MOVIE, year = "2014")
@@ -72,7 +70,7 @@ class RoomFavoritesRepositoryTest {
     }
 
     @Test
-    fun `saving an older favorite fills its missing year without duplicating it`() = runBlocking {
+    fun `saving an older favorite fills its missing year without duplicating it`() = runTest {
         val dao = FakeFavoriteMovieDao()
         dao.upsert(FavoriteMovieEntity("tt0903747", "Breaking Bad", null, "series"))
         val repository = RoomFavoritesRepository(dao)
@@ -84,7 +82,7 @@ class RoomFavoritesRepositoryTest {
     }
 
     @Test
-    fun `unrecognized persisted type remains readable`() = runBlocking {
+    fun `unrecognized persisted type remains readable`() = runTest {
         val dao = FakeFavoriteMovieDao()
         dao.upsert(FavoriteMovieEntity("tt1234567", "Example", null, "new-type"))
         assertEquals(

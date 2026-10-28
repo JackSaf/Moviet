@@ -40,7 +40,7 @@ private fun FavoritesUndoListDetailPreview() {
             VerticalDivider()
             DetailsScreen(
                 modifier = Modifier.weight(0.6f),
-                state = DetailsState(isLoading = false, details = MovieDetails(movie = PreviewMovie)),
+                state = DetailsState(isLoading = false, isFavoriteLoaded = true, details = MovieDetails(movie = PreviewMovie)),
                 compactHeader = true,
                 onBackClick = {},
                 onAction = {},

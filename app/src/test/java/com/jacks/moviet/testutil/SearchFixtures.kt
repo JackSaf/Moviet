@@ -30,8 +30,9 @@ internal fun searchRepository(
 }
 
 internal fun searchPage(page: Int, total: Int = 10, count: Int = 10) =
-    NetworkResult.Success(MovieSearchPage(searchMovies(count), total, page))
+    NetworkResult.Success(MovieSearchPage(searchMovies(count, startIndex = (page - 1) * 10), total, page))
 
-internal fun searchMovies(count: Int) = List(count) { index ->
+internal fun searchMovies(count: Int, startIndex: Int = 0) = List(count) { offset ->
+    val index = startIndex + offset
     Movie("tt$index", "Movie $index", null, MovieType.MOVIE)
 }

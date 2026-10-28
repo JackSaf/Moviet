@@ -31,6 +31,7 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
+        testInstrumentationRunner = "com.jacks.moviet.testutil.IsolatedTestRunner"
         buildConfigField("String", "OMDB_BASE_URL", "https://www.omdbapi.com/".asBuildConfigString())
         buildConfigField("String", "OMDB_API_KEY", omdbApiKey.get().asBuildConfigString())
     }
@@ -97,4 +98,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     testImplementation(libs.junit4)
     testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

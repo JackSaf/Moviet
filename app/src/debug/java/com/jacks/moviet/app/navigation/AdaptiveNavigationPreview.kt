@@ -70,6 +70,7 @@ private fun AdaptiveNavigationPreview() {
                     DetailsScreen(
                         state = DetailsState(
                             isLoading = false,
+                            isFavoriteLoaded = true,
                             details = MovieDetails(
                                 movie = movie,
                                 imdbRating = "8.2",

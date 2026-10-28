@@ -8,6 +8,8 @@ data class DetailsState(
     val details: MovieDetails? = null,
     val error: NetworkError? = null,
     val isFavorite: Boolean = false,
+    val isFavoriteLoaded: Boolean = false,
+    val favoriteLoadError: Boolean = false,
     val isSavingFavorite: Boolean = false,
     val favoriteError: Boolean = false,
 )
@@ -16,4 +18,5 @@ sealed interface DetailsAction {
     data class LoadMovie(val imdbId: String) : DetailsAction
     data object Retry : DetailsAction
     data object ToggleFavorite : DetailsAction
+    data object RetryFavorite : DetailsAction
 }

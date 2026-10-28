@@ -93,7 +93,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 onMovieClick = { movie ->
                                     moviePreviews[NavigationRoute.Search] = movie
-                                    navigation.openDetails(movie.imdbId)
+                                    navigation.openDetails(movie.imdbId, source = NavigationRoute.Search)
                                 },
                                 onFavoritesClick = dropUnlessResumed {
                                     navigation.selectTab(NavigationRoute.Favorites)
@@ -127,7 +127,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 onMovieClick = { movie ->
                                     moviePreviews[NavigationRoute.Favorites] = movie
-                                    navigation.openDetails(movie.imdbId)
+                                    navigation.openDetails(movie.imdbId, source = NavigationRoute.Favorites)
                                 },
                                 onSearchClick = dropUnlessResumed { navigation.selectTab(NavigationRoute.Search) },
                             )

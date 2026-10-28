@@ -110,7 +110,7 @@ class SearchPagingSourceTest {
         val config = PagingConfig(pageSize = 10, enablePlaceholders = false)
         val pages = listOf(
             LoadResult.Page(searchMovies(10).map { MovieSearchResult(it, 20) }, prevKey = null, nextKey = 2),
-            LoadResult.Page(searchMovies(10).map { MovieSearchResult(it, 20) }, prevKey = 1, nextKey = null),
+            LoadResult.Page(searchMovies(10, startIndex = 10).map { MovieSearchResult(it, 20) }, prevKey = 1, nextKey = null),
         )
 
         assertEquals(1, source.getRefreshKey(PagingState(pages, 5, config, 0)))

@@ -1,5 +1,6 @@
 package com.jacks.moviet.search.presentation
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -21,8 +22,11 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
-    private val mutableState = MutableStateFlow(SearchState())
+class SearchViewModel(
+    private val repository: SearchRepository,
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+    private val mutableState = MutableStateFlow(SearchState(query = savedStateHandle[QUERY_KEY] ?: ""))
     val state = mutableState.asStateFlow()
 
     private val eventChannel = Channel<SearchEvent>(Channel.BUFFERED)
@@ -44,8 +48,8 @@ class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
 
     fun onAction(action: SearchAction) {
         when (action) {
-            is SearchAction.QueryChanged -> mutableState.update { it.copy(query = action.query) }
-            SearchAction.ClearQuery -> mutableState.update { it.copy(query = "") }
+            is SearchAction.QueryChanged -> updateQuery(action.query)
+            SearchAction.ClearQuery -> updateQuery("")
             SearchAction.FavoritesClick -> viewModelScope.launch {
                 eventChannel.send(SearchEvent.OpenFavorites)
             }
@@ -55,7 +59,13 @@ class SearchViewModel(private val repository: SearchRepository) : ViewModel() {
         }
     }
 
+    private fun updateQuery(query: String) {
+        savedStateHandle[QUERY_KEY] = query
+        mutableState.update { it.copy(query = query) }
+    }
+
     private companion object {
+        const val QUERY_KEY = "search_query"
         const val QUERY_DEBOUNCE_MILLIS = 300L
     }
 }
