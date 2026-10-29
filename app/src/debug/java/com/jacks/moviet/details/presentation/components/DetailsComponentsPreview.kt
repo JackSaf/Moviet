@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.jacks.moviet.core.designsystem.theme.MovietTheme
 import com.jacks.moviet.core.designsystem.theme.Spacing
+import com.jacks.moviet.details.presentation.FavoriteState
 
 @Preview(name = "Details interactions", widthDp = 360)
 @Composable
@@ -25,9 +26,7 @@ private fun DetailsComponentsPreview() {
                 verticalArrangement = Arrangement.spacedBy(Spacing.medium),
             ) {
                 FavoriteMovieButton(
-                    isFavorite = favorite,
-                    isSaving = false,
-                    hasError = false,
+                    state = FavoriteState.Ready(isFavorite = favorite),
                     onClick = { favorite = !favorite },
                 )
                 MoviePlot(

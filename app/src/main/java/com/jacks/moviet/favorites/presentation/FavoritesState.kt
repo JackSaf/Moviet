@@ -3,20 +3,26 @@ package com.jacks.moviet.favorites.presentation
 import com.jacks.moviet.core.domain.model.Movie
 
 data class FavoritesState(
-    val movies: List<Movie> = emptyList(),
-    val isLoading: Boolean = true,
-    val hasLoadError: Boolean = false,
-    val removingIds: Set<String> = emptySet(),
-    val removalErrors: Set<String> = emptySet(),
+    val content: FavoritesContent = FavoritesContent.Loading,
+    val movieWrites: Map<String, FavoriteWriteStatus> = emptyMap(),
     val undoRemoval: UndoRemoval? = null,
 )
+
+sealed interface FavoritesContent {
+    data object Loading : FavoritesContent
+    data object Error : FavoritesContent
+    data class Loaded(val movies: List<Movie>) : FavoritesContent
+}
+
+enum class FavoriteWriteStatus { PENDING, FAILED }
 
 data class UndoRemoval(
     val id: Long,
     val movie: Movie,
-    val isRestoring: Boolean = false,
-    val hasError: Boolean = false,
+    val status: UndoStatus = UndoStatus.AVAILABLE,
 )
+
+enum class UndoStatus { AVAILABLE, RESTORING, FAILED }
 
 sealed interface FavoritesAction {
     data object SearchClick : FavoritesAction

@@ -36,14 +36,10 @@ import com.jacks.moviet.R
 import com.jacks.moviet.core.designsystem.components.ScreenMessage
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.core.domain.model.Movie
-import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.core.presentation.util.asUiText
-import com.jacks.moviet.details.presentation.components.DetailSection
 import com.jacks.moviet.details.presentation.components.DetailsHeader
-import com.jacks.moviet.details.presentation.components.DetailsRatings
-import com.jacks.moviet.details.presentation.components.FavoriteMovieButton
-import com.jacks.moviet.details.presentation.components.MoviePlot
 import com.jacks.moviet.details.presentation.components.detailsContentReveal
+import com.jacks.moviet.details.presentation.components.loadedDetailsItems
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -87,10 +83,10 @@ fun DetailsScreen(
     onBackClick: () -> Unit,
     onAction: (DetailsAction) -> Unit,
 ) {
-    val movie = state.details?.movie ?: preview
+    val movie = (state as? DetailsState.Loaded)?.details?.movie ?: preview
     val contentRevealModifier = Modifier.detailsContentReveal(
         imdbId = movie?.imdbId,
-        isLoaded = state.details != null,
+        isLoaded = state is DetailsState.Loaded,
     )
     Scaffold(
         modifier = modifier.testTag("details_screen"),
@@ -129,70 +125,25 @@ fun DetailsScreen(
                     )
                 }
             }
-            if (state.isLoading) {
-                item(key = "loading") {
+            when (state) {
+                DetailsState.Loading -> item(key = "loading") {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(Spacing.large),
                         contentAlignment = Alignment.Center,
                     ) { CircularProgressIndicator() }
                 }
-            }
-            state.error?.let { error ->
-                item(key = "error") {
+                is DetailsState.Error -> item(key = "error") {
                     ScreenMessage(
                         title = stringResource(R.string.details_error_title),
-                        message = error.asUiText().asString(),
+                        message = state.error.asUiText().asString(),
                         onRetry = { onAction(DetailsAction.Retry) },
                     )
                 }
-            }
-            state.details?.let { details ->
-                if (details.imdbRating != null || details.contentRating != null) {
-                    item(key = "ratings") {
-                        DetailsRatings(
-                            modifier = contentRevealModifier,
-                            imdbRating = details.imdbRating,
-                            contentRating = details.contentRating,
-                        )
-                    }
-                }
-                item(key = "favorite") {
-                    FavoriteMovieButton(
-                        modifier = contentRevealModifier,
-                        isFavorite = state.isFavorite,
-                        isSaving = state.isSavingFavorite,
-                        hasError = state.favoriteError,
-                        enabled = state.isFavoriteLoaded,
-                        onClick = { onAction(DetailsAction.ToggleFavorite) },
-                    )
-                }
-                if (state.favoriteLoadError) {
-                    item(key = "favorite_read_error") {
-                        ScreenMessage(
-                            title = stringResource(R.string.favorites_load_error),
-                            message = stringResource(R.string.favorites_load_error_message),
-                            onRetry = { onAction(DetailsAction.RetryFavorite) },
-                        )
-                    }
-                }
-                details.genres?.let { item(key = "genres") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_genres), text = it) } }
-                details.plot?.let { plot ->
-                    item(key = "plot") {
-                        MoviePlot(modifier = contentRevealModifier, imdbId = details.movie.imdbId, plot = plot)
-                    }
-                }
-                details.runtime?.let { runtime ->
-                    item(key = "runtime") {
-                        DetailSection(
-                            modifier = contentRevealModifier,
-                            title = stringResource(if (details.movie.type == MovieType.SERIES) R.string.movie_series_runtime else R.string.movie_runtime),
-                            text = runtime,
-                        )
-                    }
-                }
-                details.director?.let { item(key = "director") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_director), text = it) } }
-                details.actors?.let { item(key = "actors") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_actors), text = it) } }
-                details.seasons?.let { item(key = "seasons") { DetailSection(modifier = contentRevealModifier, title = stringResource(R.string.movie_seasons), text = it) } }
+                is DetailsState.Loaded -> loadedDetailsItems(
+                    modifier = contentRevealModifier,
+                    state = state,
+                    onAction = onAction,
+                )
             }
         }
     }

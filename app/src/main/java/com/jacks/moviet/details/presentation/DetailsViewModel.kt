@@ -9,6 +9,7 @@ import com.jacks.moviet.details.domain.MovieDetails
 import com.jacks.moviet.favorites.domain.FavoritesRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
@@ -29,61 +30,60 @@ class DetailsViewModel(
 ) : ViewModel() {
     private data class Request(val id: String, val retry: Int = 0)
     private data class FavoriteWrite(
-        val imdbId: String? = null,
-        val saving: Boolean = false,
-        val failed: Boolean = false,
-    )
-    private data class FavoriteStatus(
-        val isFavorite: Boolean = false,
-        val isLoaded: Boolean = false,
-        val hasError: Boolean = false,
-    )
+        val imdbId: String,
+        val update: FavoriteUpdate,
+    ) {
+        // Keep the action disabled until an older movie's write finishes; errors stay with their movie.
+        fun updateFor(movieId: String): FavoriteUpdate =
+            if (update == FavoriteUpdate.SAVING || imdbId == movieId) update else FavoriteUpdate.IDLE
+    }
 
     private val request = MutableStateFlow<Request?>(null)
-    private val favoriteWrite = MutableStateFlow(FavoriteWrite())
+    private val favoriteWrite = MutableStateFlow<FavoriteWrite?>(null)
     private val favoriteRetry = MutableStateFlow(0)
     private var cachedDetails: MovieDetails? = null
 
     // Successful responses survive collection restarts; retry explicitly invalidates the cache.
-    private fun loadDetails(current: Request) = flow {
+    private fun loadDetails(current: Request): Flow<DetailsState> = flow {
         val cached = cachedDetails?.takeIf { it.movie.imdbId == current.id }
         if (cached != null) {
-            emit(DetailsState(isLoading = false, details = cached))
+            emit(DetailsState.Loaded(cached))
         } else {
-            emit(DetailsState())
+            emit(DetailsState.Loading)
             emit(when (val result = repository.getMovie(current.id)) {
                 is NetworkResult.Success -> {
                     cachedDetails = result.data
-                    DetailsState(isLoading = false, details = result.data)
+                    DetailsState.Loaded(result.data)
                 }
-                is NetworkResult.Failure -> DetailsState(isLoading = false, error = result.error)
+                is NetworkResult.Failure -> DetailsState.Error(result.error)
             })
         }
     }
 
     private fun observeFavorite(imdbId: String) = favoriteRetry.flatMapLatest {
         favorites.observeIsFavorite(imdbId)
-            .map { FavoriteStatus(isFavorite = it, isLoaded = true) }
-            .onStart { emit(FavoriteStatus()) }
-            .catch { emit(FavoriteStatus(hasError = true)) }
+            .map<Boolean, FavoriteState> { FavoriteState.Ready(isFavorite = it) }
+            .onStart { emit(FavoriteState.Loading) }
+            .catch { emit(FavoriteState.Error) }
     }
 
     // Scope both sources to one identity so a new movie never inherits the previous
     // movie's favorite status. Local reads cannot block or terminate network content.
     val state = request.filterNotNull().flatMapLatest { current ->
         combine(loadDetails(current), observeFavorite(current.id), favoriteWrite) { content, favorite, write ->
-            content.copy(
-                isFavorite = favorite.isFavorite,
-                isFavoriteLoaded = favorite.isLoaded,
-                favoriteLoadError = favorite.hasError,
-                isSavingFavorite = write.saving,
-                favoriteError = write.imdbId == current.id && write.failed,
-            )
+            when (content) {
+                is DetailsState.Loaded -> content.copy(
+                    favorite = if (favorite is FavoriteState.Ready) {
+                        favorite.copy(update = write?.updateFor(current.id) ?: FavoriteUpdate.IDLE)
+                    } else favorite,
+                )
+                else -> content
+            }
         }
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(StateFlowPolicy.STOP_TIMEOUT_MILLIS),
-        DetailsState(),
+        DetailsState.Loading,
     )
 
     fun onAction(action: DetailsAction) {
@@ -102,20 +102,21 @@ class DetailsViewModel(
     }
 
     private fun toggleFavorite() {
-        val current = state.value
-        val movie = current.details?.movie ?: return
-        if (movie.imdbId != request.value?.id || !current.isFavoriteLoaded || favoriteWrite.value.saving) return
-        val remove = current.isFavorite
-        favoriteWrite.value = FavoriteWrite(imdbId = movie.imdbId, saving = true)
+        val current = state.value as? DetailsState.Loaded ?: return
+        val favorite = current.favorite as? FavoriteState.Ready ?: return
+        val movie = current.details.movie
+        if (movie.imdbId != request.value?.id || favoriteWrite.value?.update == FavoriteUpdate.SAVING) return
+        val remove = favorite.isFavorite
+        favoriteWrite.value = FavoriteWrite(movie.imdbId, FavoriteUpdate.SAVING)
         viewModelScope.launch {
             try {
                 if (remove) favorites.removeFavorite(movie.imdbId) else favorites.addFavorite(movie)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                favoriteWrite.value = FavoriteWrite(imdbId = movie.imdbId, failed = true)
+                favoriteWrite.value = FavoriteWrite(movie.imdbId, FavoriteUpdate.FAILED)
             } finally {
-                favoriteWrite.update { it.copy(saving = false) }
+                favoriteWrite.update { if (it?.update == FavoriteUpdate.SAVING) null else it }
             }
         }
     }

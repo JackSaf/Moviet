@@ -42,17 +42,16 @@ class FavoritesViewModelTest {
         val viewModel = viewModel()
         runCurrent()
         assertEquals(0, repository.reads)
-        assertTrue(viewModel.state.value.isLoading)
+        assertEquals(FavoritesContent.Loading, viewModel.state.value.content)
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
-        assertFalse(viewModel.state.value.isLoading)
-        assertTrue(viewModel.state.value.movies.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
         repository.movies.value = listOf(movie)
         runCurrent()
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         repository.movies.value = emptyList()
         runCurrent()
-        assertTrue(viewModel.state.value.movies.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
     }
 
     @Test
@@ -69,7 +68,7 @@ class FavoritesViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
         assertEquals(1, repository.activeCollectors)
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
     }
 
     @Test
@@ -78,14 +77,12 @@ class FavoritesViewModelTest {
         val viewModel = viewModel()
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
-        assertFalse(viewModel.state.value.isLoading)
-        assertTrue(viewModel.state.value.hasLoadError)
+        assertEquals(FavoritesContent.Error, viewModel.state.value.content)
         repository.failReads = false
         repository.movies.value = listOf(movie)
         viewModel.onAction(FavoritesAction.Retry)
         runCurrent()
-        assertFalse(viewModel.state.value.hasLoadError)
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         assertEquals(2, repository.reads)
     }
 
@@ -102,11 +99,10 @@ class FavoritesViewModelTest {
         repository.movies.value = emptyList()
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
-        assertFalse(viewModel.state.value.isLoading)
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         repository.readGate!!.complete(Unit)
         runCurrent()
-        assertTrue(viewModel.state.value.movies.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
     }
 
     @Test
@@ -119,14 +115,13 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
         viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
         runCurrent()
-        assertEquals(setOf(movie.imdbId), viewModel.state.value.removingIds)
+        assertEquals(mapOf(movie.imdbId to FavoriteWriteStatus.PENDING), viewModel.state.value.movieWrites)
         assertEquals(1, repository.removals)
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         repository.removeGate!!.complete(Unit)
         runCurrent()
-        assertTrue(viewModel.state.value.movies.isEmpty())
-        assertTrue(viewModel.state.value.removingIds.isEmpty())
-        assertTrue(viewModel.state.value.removalErrors.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
+        assertTrue(viewModel.state.value.movieWrites.isEmpty())
         assertEquals(movie, viewModel.state.value.undoRemoval?.movie)
     }
 
@@ -139,15 +134,15 @@ class FavoritesViewModelTest {
         runCurrent()
         viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
         runCurrent()
-        assertEquals(listOf(movie), viewModel.state.value.movies)
-        assertEquals(setOf(movie.imdbId), viewModel.state.value.removalErrors)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
+        assertEquals(mapOf(movie.imdbId to FavoriteWriteStatus.FAILED), viewModel.state.value.movieWrites)
         assertNull(viewModel.state.value.undoRemoval)
-        assertTrue(viewModel.state.value.removingIds.isEmpty())
+        assertFalse(FavoriteWriteStatus.PENDING in viewModel.state.value.movieWrites.values)
         repository.failWrites = false
         viewModel.onAction(FavoritesAction.RemoveMovie(movie.imdbId))
         runCurrent()
-        assertTrue(viewModel.state.value.movies.isEmpty())
-        assertTrue(viewModel.state.value.removalErrors.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
+        assertFalse(FavoriteWriteStatus.FAILED in viewModel.state.value.movieWrites.values)
     }
 
     @Test
@@ -162,7 +157,7 @@ class FavoritesViewModelTest {
         store.clear()
         runCurrent()
         assertEquals(listOf(movie), repository.movies.value)
-        assertTrue(viewModel.state.value.removalErrors.isEmpty())
+        assertFalse(FavoriteWriteStatus.FAILED in viewModel.state.value.movieWrites.values)
     }
 
     @Test
@@ -190,13 +185,13 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.UndoRemove(undo.id))
         viewModel.onAction(FavoritesAction.DismissUndo(undo.id))
         runCurrent()
-        assertTrue(viewModel.state.value.undoRemoval!!.isRestoring)
+        assertEquals(UndoStatus.RESTORING, viewModel.state.value.undoRemoval!!.status)
         assertEquals(1, repository.additions)
         repository.addGate!!.complete(Unit)
         runCurrent()
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         assertNull(viewModel.state.value.undoRemoval)
-        assertTrue(viewModel.state.value.removingIds.isEmpty())
+        assertFalse(FavoriteWriteStatus.PENDING in viewModel.state.value.movieWrites.values)
     }
 
     @Test
@@ -208,14 +203,13 @@ class FavoritesViewModelTest {
         repository.failWrites = true
         viewModel.onAction(FavoritesAction.UndoRemove(id))
         runCurrent()
-        assertTrue(viewModel.state.value.movies.isEmpty())
-        assertTrue(viewModel.state.value.undoRemoval!!.hasError)
-        assertFalse(viewModel.state.value.undoRemoval!!.isRestoring)
-        assertTrue(viewModel.state.value.removingIds.isEmpty())
+        assertTrue(viewModel.loadedMovies().isEmpty())
+        assertEquals(UndoStatus.FAILED, viewModel.state.value.undoRemoval!!.status)
+        assertFalse(FavoriteWriteStatus.PENDING in viewModel.state.value.movieWrites.values)
         repository.failWrites = false
         viewModel.onAction(FavoritesAction.UndoRemove(id))
         runCurrent()
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         assertNull(viewModel.state.value.undoRemoval)
     }
 
@@ -236,7 +230,7 @@ class FavoritesViewModelTest {
         assertEquals(0, repository.additions)
         viewModel.onAction(FavoritesAction.UndoRemove(latest.id))
         runCurrent()
-        assertEquals(listOf(second), viewModel.state.value.movies)
+        assertEquals(listOf(second), viewModel.loadedMovies())
     }
 
     @Test
@@ -267,7 +261,7 @@ class FavoritesViewModelTest {
         val latest = viewModel.state.value.undoRemoval
         repository.addGate!!.complete(Unit)
         runCurrent()
-        assertEquals(listOf(movie), viewModel.state.value.movies)
+        assertEquals(listOf(movie), viewModel.loadedMovies())
         assertEquals(latest, viewModel.state.value.undoRemoval)
         assertEquals(second, latest!!.movie)
     }
@@ -281,6 +275,8 @@ class FavoritesViewModelTest {
     }
 
     private fun viewModel() = FavoritesViewModel(repository).also { store.put("favorites", it) }
+
+    private fun FavoritesViewModel.loadedMovies() = (state.value.content as FavoritesContent.Loaded).movies
 
     private class FakeFavorites : FavoritesRepository {
         val movies = MutableStateFlow<List<Movie>>(emptyList())

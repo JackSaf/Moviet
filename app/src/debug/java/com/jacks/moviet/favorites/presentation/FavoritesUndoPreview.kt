@@ -21,6 +21,7 @@ import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.details.domain.MovieDetails
 import com.jacks.moviet.details.presentation.DetailsScreen
 import com.jacks.moviet.details.presentation.DetailsState
+import com.jacks.moviet.details.presentation.FavoriteState
 import com.jacks.moviet.favorites.presentation.components.FavoritesSnackbar
 
 @Preview(name = "Undo phone", widthDp = 360, heightDp = 800)
@@ -40,7 +41,7 @@ private fun FavoritesUndoListDetailPreview() {
             VerticalDivider()
             DetailsScreen(
                 modifier = Modifier.weight(0.6f),
-                state = DetailsState(isLoading = false, isFavoriteLoaded = true, details = MovieDetails(movie = PreviewMovie)),
+                state = DetailsState.Loaded(details = MovieDetails(PreviewMovie), favorite = FavoriteState.Ready(isFavorite = true)),
                 compactHeader = true,
                 onBackClick = {},
                 onAction = {},
@@ -78,7 +79,7 @@ private fun FavoritesUndoPane(modifier: Modifier = Modifier, compact: Boolean = 
         snackbarHost = { FavoritesSnackbar(data = data, compactLayout = compact) },
     ) { padding ->
         FavoritesScreen(
-            state = FavoritesState(isLoading = false, movies = listOf(PreviewMovie)),
+            state = FavoritesState(content = FavoritesContent.Loaded(listOf(PreviewMovie))),
             compactLayout = compact,
             selectedMovieId = PreviewMovie.imdbId,
             navigationBarHeight = padding.calculateBottomPadding(),

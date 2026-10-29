@@ -45,6 +45,8 @@ import com.jacks.moviet.core.designsystem.theme.MovietMotion
 import com.jacks.moviet.core.designsystem.theme.Spacing
 import com.jacks.moviet.favorites.presentation.FavoritesAction
 import com.jacks.moviet.favorites.presentation.FavoritesState
+import com.jacks.moviet.favorites.presentation.FavoritesContent
+import com.jacks.moviet.favorites.presentation.FavoriteWriteStatus
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -67,6 +69,7 @@ internal fun FavoriteTickets(
         headerBottomPx = with(density) { contentPadding.calculateTopPadding().toPx() },
     )
     val listState = rememberLazyListState()
+    val content = state.content
     LazyColumn(
         modifier = modifier.fillMaxSize().consumeWindowInsets(contentPadding).testTag("favorite_tickets"),
         state = listState,
@@ -76,16 +79,16 @@ internal fun FavoriteTickets(
             top = contentPadding.calculateTopPadding() + Spacing.medium,
             bottom = contentPadding.calculateBottomPadding() + Spacing.medium,
         ),
-        verticalArrangement = if (!state.isLoading && !state.hasLoadError && state.movies.isEmpty()) {
+        verticalArrangement = if (content is FavoritesContent.Loaded && content.movies.isEmpty()) {
             Arrangement.Center
         } else {
             Arrangement.spacedBy(Spacing.medium)
         },
     ) {
-        when {
+        when (content) {
             // The first local read needs neither a spinner nor a premature empty state.
-            state.isLoading -> Unit
-            state.hasLoadError -> item(key = "error") {
+            FavoritesContent.Loading -> Unit
+            FavoritesContent.Error -> item(key = "error") {
                 ScreenMessage(
                     modifier = Modifier.fillParentMaxSize(),
                     title = stringResource(R.string.favorites_load_error),
@@ -93,13 +96,12 @@ internal fun FavoriteTickets(
                     onRetry = { onAction(FavoritesAction.Retry) },
                 )
             }
-            state.movies.isEmpty() -> item(key = "empty") {
+            is FavoritesContent.Loaded -> if (content.movies.isEmpty()) item(key = "empty") {
                 EmptyFavorites(
                     compact = compactLayout,
                     onSearchClick = { onAction(FavoritesAction.SearchClick) },
                 )
-            }
-            else -> items(state.movies, key = { it.imdbId }, contentType = { "ticket" }) { movie ->
+            } else items(content.movies, key = { it.imdbId }, contentType = { "ticket" }) { movie ->
                 Column(
                     modifier = Modifier.animateItem(
                         fadeInSpec = MovietMotion.defaultEffects(),
@@ -112,14 +114,14 @@ internal fun FavoriteTickets(
                             movie = movie,
                             selected = movie.imdbId == selectedMovieId,
                             compact = compactLayout,
-                            removing = movie.imdbId in state.removingIds,
+                            removing = state.movieWrites[movie.imdbId] == FavoriteWriteStatus.PENDING,
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                             onClick = { onAction(FavoritesAction.MovieClick(movie)) },
                             onRemove = { onAction(FavoritesAction.RemoveMovie(movie.imdbId)) },
                         )
                     }
-                    if (movie.imdbId in state.removalErrors) {
+                    if (state.movieWrites[movie.imdbId] == FavoriteWriteStatus.FAILED) {
                         ScreenMessage(
                             modifier = Modifier.padding(top = Spacing.small),
                             title = stringResource(R.string.favorite_update_failed),

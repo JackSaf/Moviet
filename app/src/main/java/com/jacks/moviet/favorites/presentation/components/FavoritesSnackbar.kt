@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import com.jacks.moviet.R
 import com.jacks.moviet.favorites.presentation.FavoritesAction
 import com.jacks.moviet.favorites.presentation.UndoRemoval
+import com.jacks.moviet.favorites.presentation.UndoStatus
 
 @Composable
 internal fun FavoritesSnackbarHost(
@@ -28,17 +29,17 @@ internal fun FavoritesSnackbarHost(
     val hostState = remember { SnackbarHostState() }
     val currentOnAction = rememberUpdatedState(onAction)
     val message = stringResource(
-        if (undoRemoval?.hasError == true) R.string.favorites_restore_failed else R.string.favorites_removed,
+        if (undoRemoval?.status == UndoStatus.FAILED) R.string.favorites_restore_failed else R.string.favorites_removed,
     )
-    val actionLabel = stringResource(if (undoRemoval?.hasError == true) R.string.retry else R.string.favorites_undo)
+    val actionLabel = stringResource(if (undoRemoval?.status == UndoStatus.FAILED) R.string.retry else R.string.favorites_undo)
     // Replacing the state cancels the previous snackbar instead of queuing stale Undo actions.
     LaunchedEffect(undoRemoval, message, actionLabel) {
-        if (undoRemoval == null || undoRemoval.isRestoring) return@LaunchedEffect
+        if (undoRemoval == null || undoRemoval.status == UndoStatus.RESTORING) return@LaunchedEffect
         val result = hostState.showSnackbar(
             message = message,
             actionLabel = actionLabel,
             withDismissAction = true,
-            duration = if (undoRemoval.hasError) SnackbarDuration.Indefinite else SnackbarDuration.Long,
+            duration = if (undoRemoval.status == UndoStatus.FAILED) SnackbarDuration.Indefinite else SnackbarDuration.Long,
         )
         currentOnAction.value(
             if (result == SnackbarResult.ActionPerformed) FavoritesAction.UndoRemove(undoRemoval.id)

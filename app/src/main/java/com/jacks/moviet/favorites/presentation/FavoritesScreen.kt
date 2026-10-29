@@ -109,12 +109,11 @@ private fun FavoritesScreenPreview() {
     MovietTheme {
         FavoritesScreen(
             state = FavoritesState(
-                isLoading = false,
-                movies = listOf(
+                content = FavoritesContent.Loaded(listOf(
                     Movie("tt0816692", "Interstellar", null, MovieType.MOVIE),
                     Movie("tt0083658", "Blade Runner", null, MovieType.MOVIE),
                     Movie("tt0903747", "Breaking Bad", null, MovieType.SERIES),
-                ),
+                )),
             ),
             onAction = {},
         )
@@ -128,8 +127,7 @@ private fun FavoritesPanePreview() {
     MovietTheme {
         FavoritesScreen(
             state = FavoritesState(
-                isLoading = false,
-                movies = listOf(Movie("tt18689424", "Batman v Superman: Dawn of Justice (Ultimate Edition)", null, MovieType.MOVIE)),
+                content = FavoritesContent.Loaded(listOf(Movie("tt18689424", "Batman v Superman: Dawn of Justice (Ultimate Edition)", null, MovieType.MOVIE))),
             ),
             selectedMovieId = "tt18689424",
             compactLayout = true,
@@ -143,7 +141,7 @@ private fun FavoritesPanePreview() {
 @Preview(showBackground = true, widthDp = 320, heightDp = 640, fontScale = 1.5f)
 @Composable
 private fun EmptyFavoritesPreview() {
-    MovietTheme { FavoritesScreen(state = FavoritesState(isLoading = false), onAction = {}) }
+    MovietTheme { FavoritesScreen(state = FavoritesState(content = FavoritesContent.Loaded(emptyList())), onAction = {}) }
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -151,6 +149,6 @@ private fun EmptyFavoritesPreview() {
 @Composable
 private fun EmptyFavoritesPanePreview() {
     MovietTheme {
-        FavoritesScreen(state = FavoritesState(isLoading = false), compactLayout = true, onAction = {})
+        FavoritesScreen(state = FavoritesState(content = FavoritesContent.Loaded(emptyList())), compactLayout = true, onAction = {})
     }
 }

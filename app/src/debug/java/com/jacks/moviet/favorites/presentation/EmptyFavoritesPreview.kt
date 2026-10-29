@@ -33,7 +33,7 @@ private fun EmptyFavoritesWithNavigation(compact: Boolean = false) {
             },
         ) { padding ->
             FavoritesScreen(
-                state = FavoritesState(isLoading = false),
+                state = FavoritesState(content = FavoritesContent.Loaded(emptyList())),
                 compactLayout = compact,
                 navigationBarHeight = padding.calculateBottomPadding(),
                 onAction = {},

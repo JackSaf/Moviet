@@ -28,16 +28,17 @@ import androidx.compose.ui.res.stringResource
 import com.jacks.moviet.R
 import com.jacks.moviet.core.designsystem.theme.MovietMotion
 import com.jacks.moviet.core.designsystem.theme.Spacing
+import com.jacks.moviet.details.presentation.FavoriteState
+import com.jacks.moviet.details.presentation.FavoriteUpdate
 
 @Composable
 internal fun FavoriteMovieButton(
     modifier: Modifier = Modifier,
-    isFavorite: Boolean,
-    isSaving: Boolean,
-    hasError: Boolean,
+    state: FavoriteState,
     onClick: () -> Unit,
-    enabled: Boolean = true,
 ) {
+    val ready = state as? FavoriteState.Ready
+    val isFavorite = ready?.isFavorite == true
     val colors = MaterialTheme.colorScheme
     val containerColor by animateColorAsState(
         targetValue = if (isFavorite) colors.primaryContainer else colors.primary,
@@ -53,7 +54,7 @@ internal fun FavoriteMovieButton(
         Button(
             modifier = Modifier.fillMaxWidth().testTag("toggle_favorite"),
             onClick = onClick,
-            enabled = enabled && !isSaving,
+            enabled = ready != null && ready.update != FavoriteUpdate.SAVING,
             shape = MaterialTheme.shapes.large,
             colors = ButtonDefaults.buttonColors(
                 containerColor = containerColor,
@@ -83,7 +84,7 @@ internal fun FavoriteMovieButton(
                 }
             }
         }
-        if (hasError) {
+        if (ready?.update == FavoriteUpdate.FAILED) {
             Text(stringResource(R.string.favorite_update_failed), color = MaterialTheme.colorScheme.error)
         }
     }

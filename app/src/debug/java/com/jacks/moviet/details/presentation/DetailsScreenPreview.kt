@@ -36,9 +36,8 @@ private fun PreviewDetails(
 ) {
     MovietTheme {
         DetailsScreen(
-            state = DetailsState(
-                isLoading = false,
-                isFavoriteLoaded = true,
+            state = DetailsState.Loaded(
+                favorite = FavoriteState.Ready(isFavorite = false),
                 details = MovieDetails(
                     movie = Movie(
                         imdbId = "preview",

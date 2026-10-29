@@ -45,8 +45,7 @@ class DetailsViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
         assertEquals(1, calls)
-        assertEquals(movie, viewModel.state.value.details?.movie)
-        assertFalse(viewModel.state.value.isLoading)
+        assertEquals(movie, viewModel.loadedState().details.movie)
     }
 
     @Test
@@ -59,12 +58,11 @@ class DetailsViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
-        assertEquals(NetworkError.Connection, viewModel.state.value.error)
+        assertEquals(DetailsState.Error(NetworkError.Connection), viewModel.state.value)
         viewModel.onAction(DetailsAction.Retry)
         runCurrent()
         assertEquals(2, calls)
-        assertEquals(movie, viewModel.state.value.details?.movie)
-        assertNull(viewModel.state.value.error)
+        assertEquals(movie, viewModel.loadedState().details.movie)
     }
 
     @Test
@@ -81,7 +79,7 @@ class DetailsViewModelTest {
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
         assertEquals(1, calls)
-        assertEquals(movie, viewModel.state.value.details?.movie)
+        assertEquals(movie, viewModel.loadedState().details.movie)
     }
 
     @Test
@@ -99,7 +97,7 @@ class DetailsViewModelTest {
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
         assertTrue(cancelled)
-        assertEquals(movie, viewModel.state.value.details?.movie)
+        assertEquals(movie, viewModel.loadedState().details.movie)
     }
 
     @Test
@@ -110,11 +108,11 @@ class DetailsViewModelTest {
         runCurrent()
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
-        assertTrue(viewModel.state.value.isFavorite)
+        assertTrue(viewModel.favoriteState().isFavorite)
         assertEquals(listOf(movie), favorites.movies.value)
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
-        assertFalse(viewModel.state.value.isFavorite)
+        assertFalse(viewModel.favoriteState().isFavorite)
         assertTrue(favorites.movies.value.isEmpty())
     }
 
@@ -127,14 +125,11 @@ class DetailsViewModelTest {
         runCurrent()
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
-        assertTrue(viewModel.state.value.favoriteError)
-        assertFalse(viewModel.state.value.isSavingFavorite)
-        assertFalse(viewModel.state.value.isFavorite)
+        assertEquals(FavoriteState.Ready(false, FavoriteUpdate.FAILED), viewModel.loadedState().favorite)
         favorites.failWrites = false
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
-        assertTrue(viewModel.state.value.isFavorite)
-        assertFalse(viewModel.state.value.favoriteError)
+        assertEquals(FavoriteState.Ready(true), viewModel.loadedState().favorite)
     }
 
     private fun viewModel(load: suspend (String) -> NetworkResult<MovieDetails>): DetailsViewModel =
@@ -149,16 +144,15 @@ class DetailsViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
-        assertEquals(movie, viewModel.state.value.details?.movie)
-        assertFalse(viewModel.state.value.isLoading)
-        assertFalse(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(movie, viewModel.loadedState().details.movie)
+        assertEquals(FavoriteState.Loading, viewModel.loadedState().favorite)
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
         assertTrue(favorites.movies.value.isEmpty())
 
         favorites.readGate?.complete(Unit)
         runCurrent()
-        assertTrue(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(FavoriteState.Ready(false), viewModel.loadedState().favorite)
     }
 
     @Test
@@ -172,17 +166,14 @@ class DetailsViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
-        assertTrue(viewModel.state.value.favoriteLoadError)
-        assertEquals(movie, viewModel.state.value.details?.movie)
-        assertFalse(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(FavoriteState.Error, viewModel.loadedState().favorite)
+        assertEquals(movie, viewModel.loadedState().details.movie)
 
         favorites.failReads = false
         favorites.movies.value = listOf(movie)
         viewModel.onAction(DetailsAction.RetryFavorite)
         runCurrent()
-        assertFalse(viewModel.state.value.favoriteLoadError)
-        assertTrue(viewModel.state.value.isFavorite)
-        assertTrue(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(FavoriteState.Ready(true), viewModel.loadedState().favorite)
         assertEquals(1, requests)
     }
 
@@ -194,16 +185,15 @@ class DetailsViewModelTest {
         backgroundScope.launch { viewModel.state.collect {} }
         viewModel.onAction(DetailsAction.LoadMovie(movie.imdbId))
         runCurrent()
-        assertTrue(viewModel.state.value.isFavorite)
+        assertTrue(viewModel.favoriteState().isFavorite)
 
         favorites.readGate = CompletableDeferred()
         viewModel.onAction(DetailsAction.LoadMovie(other.imdbId))
         viewModel.onAction(DetailsAction.ToggleFavorite)
         runCurrent()
         assertEquals(listOf(movie), favorites.movies.value)
-        assertEquals(other, viewModel.state.value.details?.movie)
-        assertFalse(viewModel.state.value.isFavorite)
-        assertFalse(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(other, viewModel.loadedState().details.movie)
+        assertEquals(FavoriteState.Loading, viewModel.loadedState().favorite)
     }
 
     @Test
@@ -215,12 +205,12 @@ class DetailsViewModelTest {
         runCurrent()
         repeat(3) { viewModel.onAction(DetailsAction.ToggleFavorite) }
         runCurrent()
-        assertTrue(viewModel.state.value.isSavingFavorite)
+        assertEquals(FavoriteUpdate.SAVING, viewModel.favoriteState().update)
         assertEquals(1, favorites.writeCount)
         favorites.writeGate?.complete(Unit)
         runCurrent()
         assertEquals(listOf(movie), favorites.movies.value)
-        assertFalse(viewModel.state.value.isSavingFavorite)
+        assertEquals(FavoriteUpdate.IDLE, viewModel.favoriteState().update)
     }
 
     @Test
@@ -235,13 +225,17 @@ class DetailsViewModelTest {
         advanceTimeBy(StateFlowPolicy.STOP_TIMEOUT_MILLIS + 1)
         runCurrent()
         assertEquals(0, favorites.activeReads)
-        assertFalse(viewModel.state.value.favoriteLoadError)
+        assertEquals(FavoriteState.Loading, viewModel.loadedState().favorite)
         favorites.readGate?.complete(Unit)
         backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
         assertEquals(1, favorites.activeReads)
-        assertTrue(viewModel.state.value.isFavoriteLoaded)
+        assertEquals(FavoriteState.Ready(false), viewModel.loadedState().favorite)
     }
+
+    private fun DetailsViewModel.loadedState() = state.value as DetailsState.Loaded
+
+    private fun DetailsViewModel.favoriteState() = loadedState().favorite as FavoriteState.Ready
 
     private class FakeFavorites : FavoritesRepository {
         val movies = MutableStateFlow<List<Movie>>(emptyList())
