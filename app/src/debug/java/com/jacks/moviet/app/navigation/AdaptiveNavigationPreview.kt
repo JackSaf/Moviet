@@ -20,6 +20,7 @@ import com.jacks.moviet.core.domain.model.MovieType
 import com.jacks.moviet.details.domain.MovieDetails
 import com.jacks.moviet.details.presentation.DetailsScreen
 import com.jacks.moviet.details.presentation.DetailsState
+import com.jacks.moviet.details.presentation.FavoriteState
 import com.jacks.moviet.search.domain.MovieSearchResult
 import com.jacks.moviet.search.presentation.SearchScreen
 import com.jacks.moviet.search.presentation.SearchState
@@ -37,7 +38,7 @@ private fun AdaptiveNavigationPreview() {
         flowOf(PagingData.from(listOf(
             movie,
             Movie("tt1877830", "The Batman", null, MovieType.MOVIE, "2022"),
-        ).map { MovieSearchResult(movie = it, totalResults = 123) }))
+        ).map { MovieSearchResult(movie = it, totalResults = 123, query = "Batman") }))
     }.collectAsLazyPagingItems()
     val windowWidth = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
     val strategy = remember(windowWidth) { ListDetailScene.Strategy<NavKey>(useListDetail(windowWidth)) }
@@ -68,9 +69,8 @@ private fun AdaptiveNavigationPreview() {
                 }
                 entry<NavigationRoute.Details>(metadata = ListDetailScene.detailPane()) {
                     DetailsScreen(
-                        state = DetailsState(
-                            isLoading = false,
-                            isFavoriteLoaded = true,
+                        state = DetailsState.Loaded(
+                            favorite = FavoriteState.Ready(isFavorite = false),
                             details = MovieDetails(
                                 movie = movie,
                                 imdbRating = "8.2",

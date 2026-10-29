@@ -125,7 +125,7 @@ private fun SearchScreenPreview() {
         flowOf(PagingData.from(listOf(
             Movie("tt0372784", "Batman Begins", null, MovieType.MOVIE, "2005"),
             Movie("tt0103359", "Batman: The Animated Series", null, MovieType.SERIES, "1992–1995"),
-        ).map { MovieSearchResult(movie = it, totalResults = 123) }))
+        ).map { MovieSearchResult(movie = it, totalResults = 123, query = "Batman") }))
     }.collectAsLazyPagingItems()
     MovietTheme {
         SearchScreen(state = SearchState(query = "Batman", activeQuery = "Batman"), movies = movies, onAction = {})

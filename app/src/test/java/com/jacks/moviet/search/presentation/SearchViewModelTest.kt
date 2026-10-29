@@ -154,7 +154,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `typing retains results and returning to the active query does not reload`() = runTest(dispatcher) {
+    fun `typing shows loading while retaining the snapshot and returning to the active query does not reload`() = runTest(dispatcher) {
         val requests = mutableListOf<String>()
         val viewModel = viewModel(searchRepository { query, page ->
             requests += query
@@ -168,6 +168,7 @@ class SearchViewModelTest {
 
         viewModel.onAction(SearchAction.QueryChanged("batmans"))
         runCurrent()
+        assertEquals(SearchContent.Loading, viewModel.content(presenter))
         advanceTimeBy(200)
         assertEquals(10, presenter.snapshot().items.size)
         viewModel.onAction(SearchAction.QueryChanged("batman"))
@@ -177,10 +178,11 @@ class SearchViewModelTest {
 
         assertEquals(listOf("batman"), requests)
         assertEquals(10, presenter.snapshot().items.size)
+        assertEquals(SearchContent.Results(isLoading = false), viewModel.content(presenter))
     }
 
     @Test
-    fun `total stays with displayed movies until the new query finishes loading`() = runTest(dispatcher) {
+    fun `previous movies and total stay hidden until the new query finishes loading`() = runTest(dispatcher) {
         val newResponse = CompletableDeferred<Unit>()
         val viewModel = viewModel(searchRepository { query, page ->
             if (query == "batman") {
@@ -202,7 +204,7 @@ class SearchViewModelTest {
         assertEquals(123, presenter.snapshot().items.first().totalResults)
         advanceTimeBy(300)
         runCurrent()
-        assertEquals(SearchContent.Results(isLoading = true), viewModel.content(presenter))
+        assertEquals(SearchContent.Loading, viewModel.content(presenter))
         assertEquals(123, presenter.snapshot().items.first().totalResults)
 
         newResponse.complete(Unit)
@@ -261,9 +263,22 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `query handoff never reveals a snapshot from another query`() {
+        val state = SearchState(query = "batma", activeQuery = "batma")
+
+        // The previous generation can still report NotLoading before the new one starts.
+        assertEquals(SearchContent.Loading, state.contentFor("bat", LoadState.NotLoading(false)))
+        assertEquals(SearchContent.Loading, state.contentFor("bat", LoadState.Loading))
+        // Refreshing the same query can keep its own movies visible.
+        assertEquals(SearchContent.Results(isLoading = true), state.contentFor("batma", LoadState.Loading))
+    }
+
+    @Test
     fun `no matches after a successful search replaces retained movies with the empty state`() = runTest(dispatcher) {
+        val emptyResponse = CompletableDeferred<Unit>()
         val viewModel = viewModel(searchRepository { query, page ->
             if (query == "batma") {
+                emptyResponse.await()
                 NetworkResult.Failure(NetworkError.Omdb("Movie not found!"))
             } else {
                 searchPage(page)
@@ -278,8 +293,13 @@ class SearchViewModelTest {
 
         viewModel.onAction(SearchAction.QueryChanged("batma"))
         runCurrent()
-        assertEquals(SearchContent.Results(isLoading = true), viewModel.content(presenter))
+        assertEquals(SearchContent.Loading, viewModel.content(presenter))
         advanceTimeBy(300)
+        runCurrent()
+
+        assertEquals(LoadState.Loading, presenter.loadStateFlow.value?.refresh)
+        assertEquals(SearchContent.Loading, viewModel.content(presenter))
+        emptyResponse.complete(Unit)
         runCurrent()
 
         // This retained snapshot is what made the screenshot show movies under an error.
@@ -303,12 +323,16 @@ class SearchViewModelTest {
     fun `failed new search hides retained movies and retry replaces them with the current query`() = runTest(dispatcher) {
         val requests = mutableListOf<String>()
         var failNewQuery = true
+        val retryResponse = CompletableDeferred<Unit>()
         val viewModel = viewModel(searchRepository { query, page ->
             requests += query
             when {
                 query == "bat" -> searchPage(page)
                 failNewQuery -> NetworkResult.Failure(NetworkError.Connection)
-                else -> searchPage(page, total = 3, count = 3)
+                else -> {
+                    retryResponse.await()
+                    searchPage(page, total = 3, count = 3)
+                }
             }
         })
         val presenter = present(viewModel)
@@ -326,6 +350,11 @@ class SearchViewModelTest {
 
         failNewQuery = false
         presenter.retry()
+        runCurrent()
+
+        assertEquals(10, presenter.snapshot().items.size)
+        assertEquals(SearchContent.Loading, viewModel.content(presenter))
+        retryResponse.complete(Unit)
         runCurrent()
 
         assertEquals(listOf("bat", "batman", "batman"), requests)
@@ -438,7 +467,7 @@ class SearchViewModelTest {
 
     private fun SearchViewModel.content(presenter: PagingDataPresenter<MovieSearchResult>): SearchContent =
         state.value.contentFor(
-            itemCount = presenter.snapshot().items.size,
+            snapshotQuery = presenter.snapshot().items.firstOrNull()?.query,
             refresh = requireNotNull(presenter.loadStateFlow.value).refresh,
         )
 

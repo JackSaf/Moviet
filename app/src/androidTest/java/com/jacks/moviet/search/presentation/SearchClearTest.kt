@@ -80,7 +80,7 @@ private class LoadedSearchRepository : SearchRepository {
     override fun observeSearchMovies(query: String): Flow<PagingData<MovieSearchResult>> = flowOf(
         if (query.isBlank()) PagingData.empty() else PagingData.from(
             List(30) { index ->
-                MovieSearchResult(Movie("tt$index", "Movie $index", null, MovieType.MOVIE), totalResults = 30)
+                MovieSearchResult(Movie("tt$index", "Movie $index", null, MovieType.MOVIE), totalResults = 30, query = query)
             },
         ),
     )

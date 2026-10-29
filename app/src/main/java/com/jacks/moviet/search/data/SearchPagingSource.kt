@@ -30,7 +30,7 @@ internal class SearchPagingSource(
                 val endReached = movies.isEmpty() ||
                     page * PAGE_SIZE >= result.data.totalResults || page >= OmdbConfig.LAST_PAGE
                 LoadResult.Page(
-                    data = movies.map { MovieSearchResult(it, result.data.totalResults) },
+                    data = movies.map { MovieSearchResult(it, result.data.totalResults, query) },
                     prevKey = (page - 1).takeIf { page > OmdbConfig.FIRST_PAGE },
                     nextKey = (page + 1).takeUnless { endReached },
                 )
